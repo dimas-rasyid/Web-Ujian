@@ -8,6 +8,7 @@ use App\Models\Soal;
 use App\Models\OpsiSoal;
 use App\Imports\SoalImport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Cache;
 
 class SoalController extends Controller
 {
@@ -22,8 +23,8 @@ class SoalController extends Controller
         return view('sesi.tambah-soal', compact('sesi', 'listSoal'));
     }
 
-    // Menyimpan Soal (Pilihan Ganda atau Essay) ke Database
-    public function store(Request $request, $id_sesi) { // 1. Validasi input yang fleksibel untuk Pilihan Ganda dan Essay
+    public function store(Request $request, $id_sesi)
+    {
         $request->validate([
             'tipe'          => 'required|in:Pilihan Ganda,Essay',
             'pertanyaan'    => 'required|string',
@@ -32,18 +33,16 @@ class SoalController extends Controller
             'opsi.*'        => 'nullable|string',
         ]);
 
-        // 2. Simpan data soal ke tabel `soal`
         $soal = Soal::create([
             'sesi_id'    => $id_sesi,
             'tipe'       => $request->tipe,
             'pertanyaan' => $request->pertanyaan,
         ]);
 
-        // 3. Jika tipe soal adalah Pilihan Ganda, simpan pilihan opsi ke tabel `opsi_soal`
-        if ($request->tipe === 'Pilihan Ganda' &&$request->has('opsi')) {
-            foreach ($request->opsi as $kodeOpsi =>$teksOpsi) {
-                // Pastikan teks opsi tidak kosong sebelum disimpan ke database
-                if (!empty(trim($teksOpsi))) {$isCorrect = ($kodeOpsi ===$request->kunci_jawaban) ? 1 : 0;
+        if ($request->tipe === 'Pilihan Ganda' && $request->has('opsi')) {
+            foreach ($request->opsi as $kodeOpsi => $teksOpsi) {
+                if (!empty(trim($teksOpsi))) {
+                    $isCorrect = ($kodeOpsi === $request->kunci_jawaban) ? 1 : 0;
 
                     OpsiSoal::create([
                         'soal_id'   => $soal->id_soal,
@@ -55,44 +54,55 @@ class SoalController extends Controller
             }
         }
 
+        // HAPUS CACHE SOAL SESI INI
+        Cache::forget("sesi_{$id_sesi}_soal");
+
         return redirect()->route('guru.soal.create', $id_sesi)->with('success', 'Soal berhasil ditambahkan!');
     }
 
-    // Import Soal
-    public function import(Request $request,$id_sesi)
+    public function import(Request $request, $id_sesi)
     {
         $request->validate([
             'file_excel' => 'required|file|mimes:xlsx,xls,csv|max:5120',
         ]);
 
         try {
-            Excel::import(new SoalImport($id_sesi),$request->file('file_excel'));
+            Excel::import(new SoalImport($id_sesi), $request->file('file_excel'));
+            
+            // HAPUS CACHE SOAL SESI INI
+            Cache::forget("sesi_{$id_sesi}_soal");
+
             return back()->with('success', 'Soal berhasil diimport!');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal mengimport file. Pastikan format kolom pada file Excel sudah sesuai.']);
         }
     }
 
-    // Menghapus soal satuan beserta opsi terkaitnya
     public function destroy($id_soal)
     {
         $soal = Soal::findOrFail($id_soal);
-        $sesiId =$soal->sesi_id;
+        $sesiId = $soal->sesi_id;
         
-        // Hapus opsi soal terlebih dahulu
-        $soal->opsi()->delete();$soal->delete();
+        $soal->opsi()->delete();
+        $soal->delete();
+
+        // HAPUS CACHE SOAL SESI INI
+        Cache::forget("sesi_{$sesiId}_soal");
 
         return redirect()->route('guru.soal.create', $sesiId)->with('success', 'Soal berhasil dihapus!');
     }
 
-    // Menghapus semua soal dalam sesi tertentu sekaligus
     public function destroyAll($id_sesi)
     {
-        $soals = Soal::where('sesi_id',$id_sesi)->get();
+        $soals = Soal::where('sesi_id', $id_sesi)->get();
 
-        foreach ($soals as$soal) {
-            $soal->opsi()->delete();$soal->delete();
+        foreach ($soals as $soal) {
+            $soal->opsi()->delete();
+            $soal->delete();
         }
+
+        // HAPUS CACHE SOAL SESI INI
+        Cache::forget("sesi_{$id_sesi}_soal");
 
         return redirect()->route('guru.soal.create', $id_sesi)->with('success', 'Semua soal pada sesi ini berhasil dihapus!');
     }

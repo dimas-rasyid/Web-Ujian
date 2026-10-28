@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Nilai;
-use App\Models\Sesi;
-use App\Models\Siswa;
-use App\Models\Soal;
-use App\Models\OpsiSoal;
-use App\Models\Jawaban;
 use Illuminate\Http\Request;
+use App\Models\Siswa;
+use App\Models\Sesi;
+use App\Models\Nilai;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class UjianController extends Controller
 {
@@ -93,10 +91,14 @@ class UjianController extends Controller
                 ->withErrors(['token' => 'Waktu ujian Anda sudah habis.']);
         }
 
-        // Ambil soal beserta opsi (tanpa is_correct demi keamanan)
-        $listSoal = \App\Models\Soal::with(['opsi' => function($query) {
-            $query->select('id_opsi', 'soal_id', 'kode_opsi', 'teks_opsi');
-        }])->where('sesi_id', $sesi->id_sesi)->get();
+        // 2. Terapkan Caching (Simpan ke RAM server selama 1 jam / 3600 detik)
+        $cacheKey = "sesi_{$sesi->id_sesi}_soal";
+        
+        $listSoal = Cache::remember($cacheKey, 3600, function () use ($sesi) {
+            return \App\Models\Soal::with(['opsi' => function($query) {
+                $query->select('id_opsi', 'soal_id', 'kode_opsi', 'teks_opsi');
+            }])->where('sesi_id', $sesi->id_sesi)->get();
+        });
 
         return view('siswa.ujian', compact('sesi', 'nilai', 'sisaDetik', 'listSoal'));
     }

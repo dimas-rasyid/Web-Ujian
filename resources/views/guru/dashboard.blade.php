@@ -20,7 +20,7 @@
     </nav>
 
     <!-- Konten Utama -->
-    <div class="max-w-6xl mx-auto mt-8 px-4 pb-12">
+    <div class="max-w-6xl mx-auto mt-6 px-4 pb-12">
         
         <!-- Flash Message -->
         @if(session('success'))
@@ -30,7 +30,7 @@
         @endif
 
         <!-- Card Menu Manajemen Data Master -->
-        <div class="mb-8">
+        <div class="mb-0">
             <h3 class="text-lg font-bold text-gray-800 mb-4">
                 {{ session('role') === 'admin' ? 'Manajemen Data Master' : 'Menu Pengajar' }}
             </h3>
@@ -48,18 +48,18 @@
                         <div class="text-indigo-600 font-bold text-lg mb-1 group-hover:translate-x-1 transition-transform">👨‍🏫 Guru / Admin</div>
                         <p class="text-xs text-gray-500">Kelola akun pengajar & pengawas</p>
                     </a>
-                @endif
 
-                <!-- Card Siswa (Tampil untuk Admin & Pengajar) -->
-                <a href="{{ route('guru.managesiswa') }}" class="bg-white p-5 rounded-lg shadow border border-gray-200 hover:border-indigo-500 hover:shadow-md transition group">
-                    <div class="text-indigo-600 font-bold text-lg mb-1 group-hover:translate-x-1 transition-transform">🎓 Siswa</div>
-                    <p class="text-xs text-gray-500">Kelola data peserta didik / NISN</p>
-                </a>
+                    <!-- Card Siswa (Hanya Admin) -->
+                    <a href="{{ route('guru.managesiswa') }}" class="bg-white p-5 rounded-lg shadow border border-gray-200 hover:border-indigo-500 hover:shadow-md transition group">
+                        <div class="text-indigo-600 font-bold text-lg mb-1 group-hover:translate-x-1 transition-transform">🎓 Siswa</div>
+                        <p class="text-xs text-gray-500">Kelola data peserta didik / NISN</p>
+                    </a>
+                @endif
             </div>
         </div>
 
         <!-- Daftar Sesi Ujian -->
-        <div class="flex justify-between items-center mb-6">
+        <div class="flex justify-between items-center mb-3">
             <div>
                 <h2 class="text-2xl font-bold text-gray-800">Daftar Sesi Ujian</h2>
             </div>
@@ -123,7 +123,7 @@
                                 <td class="p-4">{{ $sesi->durasi }} Menit</td>
                                 <td class="p-4 text-center">
                                     <span class="bg-gray-100 px-2.5 py-1 rounded font-bold text-xs">
-                                        {{ $sesi->soal->count() }} Soal
+                                        {{ $sesi->soal->count() }}
                                     </span>
                                 </td>
                                 <td class="p-4 text-center space-x-2 whitespace-nowrap">
