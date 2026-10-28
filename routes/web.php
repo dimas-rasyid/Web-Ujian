@@ -11,6 +11,7 @@ use App\Http\Controllers\SoalController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\UjianController;
 use App\Http\Controllers\NilaiController;
+use App\Http\Controllers\LaporanController;
 
 // Halaman Utama langsung diarahkan ke Login Siswa
 Route::get('/', function () {
@@ -87,6 +88,9 @@ Route::middleware(['auth.guru'])->group(function () {
     Route::delete('/guru/soal/{id_soal}', [SoalController::class, 'destroy'])->name('guru.soal.destroy');
     Route::delete('/guru/sesi/{id_sesi}/soal/destroy-all', [SoalController::class, 'destroyAll'])->name('guru.soal.destroyAll');
     
+    // Export laporan nilai
+    Route::get('/guru/sesi/{id_sesi}/laporan/pdf',[LaporanController::class, 'exportPdf'])->name('guru.laporan.pdf');
+    Route::get('/guru/sesi/{id_sesi}/laporan/excel',[LaporanController::class, 'exportExcel'])->name('guru.laporan.excel');
     
 
 });

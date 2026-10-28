@@ -35,6 +35,61 @@
                 </select>
             </form>
         </div>
+        
+        
+        <div class="flex flex-wrap gap-3 mt-4 mb-6">
+            {{-- Tombol Export PDF --}}
+            <a
+                href="{{ route('guru.laporan.pdf', [
+                    'id_sesi' => $sesi->id_sesi,
+                    'kelas_id' => $kelasIdDipilih
+                ]) }}"
+                class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow hover:bg-red-700 transition"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg"
+                    width="18" height="18" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <path d="M14 2v6h6"/>
+                    <path d="M8 13h8M8 17h5"/>
+              </svg>
+              Export PDF
+            </a>
+
+         {{-- Tombol Export Excel --}}
+          <a
+              href="{{ route('guru.laporan.excel', [
+                  'id_sesi' => $sesi->id_sesi,
+                  'kelas_id' => $kelasIdDipilih
+               ]) }}"
+               class="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow hover:bg-green-700 transition"
+           >
+              <svg xmlns="http://www.w3.org/2000/svg"
+                     width="18" height="18" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round"
+                     stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <path d="M14 2v6h6"/>
+                    <path d="m8 13 3 4m0-4-3 4m6-4h2m-2 4h2"/>
+             </svg>
+             Export Excel
+            </a>
+        </div>
+        
+@if (session('error'))
+    <div class="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+        {{ session('error') }}
+    </div>
+@endif
+
+@if (session('success'))
+    <div class="mb-4 rounded-lg border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-700">
+        {{ session('success') }}
+    </div>
+@endif
 
         <!-- Tabel Rekap Nilai -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
