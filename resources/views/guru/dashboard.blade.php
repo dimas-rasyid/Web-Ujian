@@ -30,7 +30,7 @@
         @endif
 
         <!-- Card Menu Manajemen Data Master -->
-        <div class="mb-0">
+        <div class="mb-3">
             <h3 class="text-lg font-bold text-gray-800 mb-4">
                 {{ session('role') === 'admin' ? 'Manajemen Data Master' : 'Menu Pengajar' }}
             </h3>
