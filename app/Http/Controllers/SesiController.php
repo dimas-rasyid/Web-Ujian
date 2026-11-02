@@ -27,8 +27,9 @@ class SesiController extends Controller
 
         $listKelas = Kelas::with('jurusan')->get();
         $listGuru = Guru::all();
+        $listBankSesi = Sesi::select('judul','kategori')->distinct()->get();
 
-        return view('sesi.managesesi', compact('listSesi', 'listKelas', 'listGuru', 'search'));
+        return view('sesi.managesesi', compact('listSesi', 'listKelas', 'listGuru', 'search','listBankSesi'));
     }
 
     // Menampilkan Form Tambah Sesi

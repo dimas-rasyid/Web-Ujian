@@ -80,6 +80,9 @@ Route::middleware(['auth.guru'])->group(function () {
     Route::get('/guru/sesi/{id}/edit', [SesiController::class, 'edit'])->name('sesi.edit');
     Route::put('/guru/sesi/{id}', [SesiController::class, 'update'])->name('sesi.update');
     Route::delete('/guru/sesi/{id}', [SesiController::class, 'destroy'])->name('sesi.destroy');
+    // Salin soal dari sesi lain (Bank Soal)
+    Route::post('/guru/soal/{id_sesi_tujuan}/salin/{id_sesi_sumber}', [SoalController::class, 'salinDariBank'])
+        ->name('guru.soal.salin');
 
     //manage soal
     Route::get('/guru/sesi/{id_sesi}/soal/tambah', [SoalController::class, 'create'])->name('guru.soal.create');

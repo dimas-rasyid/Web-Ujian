@@ -215,35 +215,185 @@
 
                         <div class="px-6 py-5 overflow-y-auto space-y-4">
 
-                            <div>
-                                <label for="judul" class="block text-sm font-medium text-slate-700 mb-1">Judul ujian</label>
-                                <input id="judul" type="text" name="judul" required value="{{ old('judul') }}"
-                                    placeholder="Contoh: UAS Pemrograman Web, Senin, 07.30"
-                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                            </div>
+                            <!-- Judul -->
+                            <div x-data="{
+                                    open: false,
+                                    q: '{{ addslashes(old('judul')) }}',
+                                    matches(judul) {
+                                        return judul.includes(this.q.toLowerCase().trim());
+                                    },
+                                    noResult() {
+                                        const items = this.$refs.list.querySelectorAll('li[data-judul]');
+                                        const q = this.q.toLowerCase().trim();
+                                        return items.length > 0 && ![...items].some(li => li.dataset.judul.includes(q));
+                                    },
+                                    pick(judul) {
+                                        this.q = judul;
+                                        this.open = false;
+                                    },
+                                    pickFirst() {
+                                        const q = this.q.toLowerCase().trim();
+                                        const first = [...this.$refs.list.querySelectorAll('li[data-judul]')]
+                                            .find(li => li.dataset.judul.includes(q));
+                                        if (first) this.pick(first.dataset.label);
+                                    }
+                                }"
+                                @click.away="open = false"
+                                @keydown.escape="open = false">
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="kategori" class="block text-sm font-medium text-slate-700 mb-1">Kategori atau mapel</label>
-                                    <input id="kategori" type="text" name="kategori" value="{{ old('kategori') }}"
-                                        placeholder="Contoh: Produktif TKJ"
-                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                                </div>
+                                <label for="judul" class="block text-sm font-medium text-slate-700 mb-1">Judul Ujian</label>
 
-                                <div class="mb-4">
-                                    <label for="guru" class="block text-sm font-medium text-slate-700 mb-1">Guru penanggung jawab</label>
-                                    <!-- Ubah name menjadi 'guru_nama_input' tanpa spasi, atau langsung simpan id -->
-                                    <input id="guru" list="list-guru" name="guru_nama_input" required
-                                        value="{{ old('guru_nama_input') }}" placeholder="Ketik nama guru"
+                                <div class="relative">
+                                    <input id="judul" type="text" name="judul" required autocomplete="off"
+                                        x-model="q"
+                                        @focus="open = true"
+                                        @input="open = true"
+                                        @keydown.enter="if (open && !noResult() && $refs.list.querySelector('li[data-judul]')) { $event.preventDefault(); pickFirst(); }"
+                                        placeholder="Ketik judul baru atau pilih dari riwayat..."
                                         class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                                    <datalist id="list-guru">
-                                        @foreach($listGuru as $guru)
-                                            <option value="{{ $guru->nama }}">
+
+                                    <!-- Dropdown tepat di bawah input -->
+                                    <ul x-ref="list" x-show="open" x-cloak
+                                        class="absolute left-0 right-0 top-full mt-1 z-50 max-h-48 overflow-y-auto bg-white border border-slate-300 rounded-lg shadow-lg py-1 text-sm">
+                                        @foreach($listBankSesi->pluck('judul')->filter()->unique() as $judulBank)
+                                            <li data-judul="{{ strtolower($judulBank) }}"
+                                                data-label="{{ $judulBank }}"
+                                                x-show="matches($el.dataset.judul)"
+                                                @click="pick($el.dataset.label)"
+                                                class="px-3 py-2 cursor-pointer text-slate-700 hover:bg-indigo-50 hover:text-indigo-700">
+                                                {{ $judulBank }}
+                                            </li>
                                         @endforeach
-                                    </datalist>
+
+                                        <li x-show="noResult()" x-cloak class="px-3 py-2 text-slate-400 italic">
+                                            Tidak ada riwayat yang cocok, judul baru akan dipakai
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <p class="text-[11px] text-slate-500 mt-1">Ketik manual secara bebas atau klik untuk memilih judul dari sesi yang sudah pernah dibuat.</p>
+                            </div>
+
+                            <!-- Mapel dan Guru -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <!-- Kategori -->
+                                <div x-data="{
+                                        open: false,
+                                        q: '{{ addslashes(old('kategori')) }}',
+                                        matches(kategori) {
+                                            return kategori.includes(this.q.toLowerCase().trim());
+                                        },
+                                        noResult() {
+                                            const items = this.$refs.list.querySelectorAll('li[data-kategori]');
+                                            const q = this.q.toLowerCase().trim();
+                                            return items.length > 0 && ![...items].some(li => li.dataset.kategori.includes(q));
+                                        },
+                                        pick(kategori) {
+                                            this.q = kategori;
+                                            this.open = false;
+                                        },
+                                        pickFirst() {
+                                            const q = this.q.toLowerCase().trim();
+                                            const first = [...this.$refs.list.querySelectorAll('li[data-kategori]')]
+                                                .find(li => li.dataset.kategori.includes(q));
+                                            if (first) this.pick(first.dataset.label);
+                                        }
+                                    }"
+                                    @click.away="open = false"
+                                    @keydown.escape="open = false">
+
+                                    <label for="kategori" class="block text-sm font-medium text-slate-700 mb-1">Kategori atau mapel</label>
+
+                                    <div class="relative">
+                                        <input id="kategori" type="text" name="kategori" autocomplete="off"
+                                            x-model="q"
+                                            @focus="open = true"
+                                            @input="open = true"
+                                            @keydown.enter="if (open && !noResult() && $refs.list.querySelector('li[data-kategori]')) { $event.preventDefault(); pickFirst(); }"
+                                            placeholder="Contoh: Produktif TKJ"
+                                            class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+
+                                        <!-- Dropdown tepat di bawah input -->
+                                        <ul x-ref="list" x-show="open" x-cloak
+                                            class="absolute left-0 right-0 top-full mt-1 z-50 max-h-48 overflow-y-auto bg-white border border-slate-300 rounded-lg shadow-lg py-1 text-sm">
+                                            @foreach($listBankSesi->pluck('kategori')->filter()->unique(fn($k) => strtolower(trim($k))) as $kategoriBank)
+                                                <li data-kategori="{{ strtolower($kategoriBank) }}"
+                                                    data-label="{{ $kategoriBank }}"
+                                                    x-show="matches($el.dataset.kategori)"
+                                                    @click="pick($el.dataset.label)"
+                                                    class="px-3 py-2 cursor-pointer text-slate-700 hover:bg-indigo-50 hover:text-indigo-700">
+                                                    {{ $kategoriBank }}
+                                                </li>
+                                            @endforeach
+
+                                            <li x-show="noResult()" x-cloak class="px-3 py-2 text-slate-400 italic">
+                                                Tidak ada riwayat yang cocok, kategori baru akan dipakai
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    <p class="text-[11px] text-slate-500 mt-1">Ketik manual atau klik untuk memilih dari kategori yang pernah dibuat.</p>
+                                </div>
+
+                                <div class="mb-4"
+                                    x-data="{
+                                        open: false,
+                                        q: '{{ addslashes(old('guru_nama_input')) }}',
+                                        matches(nama) {
+                                            return nama.includes(this.q.toLowerCase().trim());
+                                        },
+                                        noResult() {
+                                            const items = this.$refs.list.querySelectorAll('li[data-nama]');
+                                            const q = this.q.toLowerCase().trim();
+                                            return ![...items].some(li => li.dataset.nama.includes(q));
+                                        },
+                                        pick(nama) {
+                                            this.q = nama;
+                                            this.open = false;
+                                        },
+                                        pickFirst() {
+                                            const q = this.q.toLowerCase().trim();
+                                            const first = [...this.$refs.list.querySelectorAll('li[data-nama]')]
+                                                .find(li => li.dataset.nama.includes(q));
+                                            if (first) this.pick(first.dataset.label);
+                                        }
+                                    }"
+                                    @click.away="open = false"
+                                    @keydown.escape="open = false">
+
+                                    <label for="guru" class="block text-sm font-medium text-slate-700 mb-1">Guru penanggung jawab</label>
+
+                                    <div class="relative">
+                                        <input id="guru" type="text" name="guru_nama_input" required autocomplete="off"
+                                            x-model="q"
+                                            @focus="open = true"
+                                            @input="open = true"
+                                            @keydown.enter="if (open) { $event.preventDefault(); pickFirst(); }"
+                                            placeholder="Ketik nama guru"
+                                            class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+
+                                        <!-- Dropdown tepat di bawah input -->
+                                        <ul x-ref="list" x-show="open" x-cloak
+                                            class="absolute left-0 right-0 top-full mt-1 z-50 max-h-48 overflow-y-auto bg-white border border-slate-300 rounded-lg shadow-lg py-1 text-sm">
+                                            @foreach($listGuru as $guru)
+                                                <li data-nama="{{ strtolower($guru->nama) }}"
+                                                    data-label="{{ $guru->nama }}"
+                                                    x-show="matches($el.dataset.nama)"
+                                                    @click="pick($el.dataset.label)"
+                                                    class="px-3 py-2 cursor-pointer text-slate-700 hover:bg-indigo-50 hover:text-indigo-700">
+                                                    {{ $guru->nama }}
+                                                </li>
+                                            @endforeach
+
+                                            <li x-show="noResult()" x-cloak class="px-3 py-2 text-slate-400 italic">
+                                                Guru tidak ditemukan
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
 
+                            <!-- Sesi dan Tgl -->
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label for="sesi" class="block text-sm font-medium text-slate-700 mb-1">Label sesi</label>
@@ -264,6 +414,7 @@
                                 </div>
                             </div>
 
+                            <!-- Jam Mulai- Selesai & Durasi -->
                             <div class="grid grid-cols-3 gap-3 sm:gap-4">
                                 <div>
                                     <label for="waktu_mulai" class="block text-sm font-medium text-slate-700 mb-1">Jam mulai</label>
@@ -282,6 +433,7 @@
                                 </div>
                             </div>
 
+                            <!-- Token -->
                             <div>
                                 <label for="tokenInput" class="block text-sm font-medium text-slate-700 mb-1">Token ujian</label>
                                 <div class="flex gap-2 max-w-xs">
