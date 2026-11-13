@@ -3,34 +3,46 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 use App\Models\Jurusan;
-use App\Models\Kelas;
 use App\Models\Guru;
-use App\Models\Siswa;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
+    /**
+     * Seed the application's database.
+     */
     public function run(): void
     {
-        // 1. Buat Data Jurusan
-        $jurusanRPL = Jurusan::create(['nama_jurusan' => 'RPL']);
-        
-        $jurusanRPL = Jurusan::create(['nama_jurusan' => 'TJAT']);
+        // 1. Input Data Jurusan
+        $jurusanList = [
+            ['nama_jurusan' => 'RPL'],
+            ['nama_jurusan' => 'TJKT'],
+            ['nama_jurusan' => 'DKV'],
+            ['nama_jurusan' => 'AKR'],
+            ['nama_jurusan' => 'MP'],
+        ];
 
-        $jurusanRPL = Jurusan::create(['nama_jurusan' => 'MP']);
-        
-        $jurusanRPL = Jurusan::create(['nama_jurusan' => 'AKR']);
+        foreach ($jurusanList as $j) {
+            Jurusan::create($j);
+        }
 
-        
+        // Ambil ID jurusan pertama (misal: RPL) untuk relasi guru default jika diperlukan
+        $jurusanRPL = Jurusan::where('nama_jurusan', 'RPL')->first();
 
-        // 3. Buat Akun Guru (Admin & Pengajar)
+        // 2. Input Data Guru (Admin & Pengajar)
         Guru::create([
             'jurusan_id' => $jurusanRPL->id_jurusan,
-            'nama' => 'Pak Budi',
-            'role' => 'admin', // Status Admin
-            'password' => Hash::make('123456') // Password untuk login
+            'nama'       => 'Administrator Utama',
+            'role'       => 'admin',
+            'password'   => Hash::make('password123'), // Sesuaikan password
         ]);
 
+        Guru::create([
+            'jurusan_id' => $jurusanRPL->id_jurusan,
+            'nama'       => 'Guru Pengajar Mapel',
+            'role'       => 'pengajar',
+            'password'   => Hash::make('password123'), // Sesuaikan password
+        ]);
     }
 }

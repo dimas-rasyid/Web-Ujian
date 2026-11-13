@@ -8,14 +8,15 @@ class Soal extends Model
 {
     protected $table = 'soal';
     protected $primaryKey = 'id_soal';
-    protected $guarded = [];
 
-    public function sesi()
+    protected $fillable = ['control_id', 'tipe', 'pertanyaan'];
+
+    public function control()
     {
-        return $this->belongsTo(Sesi::class, 'sesi_id', 'id_sesi');
+        return $this->belongsTo(Control::class, 'control_id', 'id_control');
     }
 
-    public function opsi()
+    public function opsiSoal()
     {
         return $this->hasMany(OpsiSoal::class, 'soal_id', 'id_soal');
     }
@@ -23,5 +24,10 @@ class Soal extends Model
     public function jawaban()
     {
         return $this->hasMany(Jawaban::class, 'soal_id', 'id_soal');
+    }
+
+    public function opsi()
+    {
+        return $this->hasMany(OpsiSoal::class, 'soal_id', 'id_soal');
     }
 }

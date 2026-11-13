@@ -15,8 +15,8 @@ class SiswaImport implements ToModel, WithHeadingRow, SkipsEmptyRows
     {
         $namaKelas = trim($row['kelas'] ?? '');
 
-        // Cari kelas berdasarkan nama kelas di database
-        $kelas = Kelas::where('nama_kelas', 'LIKE', '%' . $namaKelas . '%')->first();
+        // Cari kelas berdasarkan kolom 'kelas' di database
+        $kelas = Kelas::where('kelas', 'LIKE', '%' . $namaKelas . '%')->first();
 
         // Jika kelas tidak ditemukan, abaikan baris ini
         if (!$kelas) {
@@ -26,7 +26,7 @@ class SiswaImport implements ToModel, WithHeadingRow, SkipsEmptyRows
         return new Siswa([
             'kelas_id' => $kelas->id_kelas,
             'nisn'     => $row['nisn'],
-            'nama'     => $row['nama'],
+            'name'     => $row['nama'], // Ubah 'nama' menjadi 'name' sesuai kolom database
             'password' => Hash::make($row['password']),
         ]);
     }

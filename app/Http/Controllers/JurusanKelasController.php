@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Jurusan;
 use App\Models\Kelas;
+use App\Models\Guru;
 
 class JurusanKelasController extends Controller
 {
@@ -12,7 +13,13 @@ class JurusanKelasController extends Controller
     public function index()
     {
         $listJurusan = Jurusan::with('kelas')->get();
-        return view('guru.jurusan-kelas', compact('listJurusan'));
+        // Memuat relasi 'kelas' dan sub-relasi 'waliKelas' (yang merujuk ke model Guru)
+        $listJurusan = Jurusan::with(['kelas.waliKelas'])->get();
+        
+        // Jika Anda juga memerlukan daftar guru untuk pilihan wali kelas nantinya saat form tambah/edit:
+        $listGuru = \App\Models\Guru::all(); 
+
+        return view('guru.jurusan-kelas', compact('listJurusan', 'listGuru'));
     }
 
     // Menyimpan Jurusan Baru
@@ -34,12 +41,18 @@ class JurusanKelasController extends Controller
     {
         $request->validate([
             'jurusan_id' => 'required|exists:jurusan,id_jurusan',
-            'nama_kelas' => 'required|string|max:255'
+            'tingkat'    => 'required|in:X,XI,XII',
+            'nama_kelas' => 'required|string|max:255',
+            // Jika wali kelas wajib dipilih, ganti 'nullable' jadi 'required'. 
+            // Jika opsional, hapus atribut 'required' di form HTML. Kita buat 'nullable' di sini:
+            'guru_id'    => 'nullable|exists:guru,id_guru', 
         ]);
 
         Kelas::create([
             'jurusan_id' => $request->jurusan_id,
-            'nama_kelas' => $request->nama_kelas
+            'tingkat'    => $request->tingkat,
+            'kelas'      => $request->nama_kelas,
+            'guru_id'    => $request->guru_id,
         ]);
 
         return back()->with('success', 'Kelas berhasil ditambahkan!');

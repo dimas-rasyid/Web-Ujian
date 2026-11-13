@@ -55,20 +55,48 @@
                     <h3 class="font-bold text-gray-800 text-base mb-4">Tambah Kelas Baru</h3>
                     <form action="{{ route('guru.kelas.store') }}" method="POST">
                         @csrf
+                        
+                        <!-- Pilihan Jurusan -->
                         <div class="mb-4">
                             <label class="block text-gray-700 text-xs font-bold mb-2">Pilih Jurusan</label>
-                            <select name="jurusan_id" required class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-                                <option value="">-- Pilih Jurusan --</option>
+                            <select name="jurusan_id" required class="w-full border rounded px-3 py-2 text-sm">
+                                <option value="">Pilih Jurusan</option>
                                 @foreach($listJurusan as $jurusan)
                                     <option value="{{ $jurusan->id_jurusan }}">{{ $jurusan->nama_jurusan }}</option>
                                 @endforeach
                             </select>
                         </div>
+
+                        <!-- Pilihan Tingkat -->
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-xs font-bold mb-2">Tingkat</label>
+                            <select name="tingkat" required class="w-full border rounded px-3 py-2 text-sm">
+                                <option value="">Pilih Tingkat</option>
+                                <option value="X">X (Sepuluh)</option>
+                                <option value="XI">XI (Sebelas)</option>
+                                <option value="XII">XII (Duabelas)</option>
+                            </select>
+                        </div>
+
+                        <!-- Nama Kelas -->
                         <div class="mb-4">
                             <label class="block text-gray-700 text-xs font-bold mb-2">Nama Kelas</label>
-                            <input type="text" name="nama_kelas" required placeholder="Contoh: XII MM 1" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <input type="text" name="nama_kelas" required placeholder="Contoh: RPL 1" class="w-full border rounded px-3 py-2 text-sm">
                         </div>
-                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-sm transition">
+
+                        <!-- Pilihan Wali Kelas -->
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-xs font-bold mb-2">Wali Kelas (Opsional)</label>
+                            <select name="guru_id" class="w-full border rounded px-3 py-2 text-sm bg-white">
+                                <option value="">-- Pilih Wali Kelas --</option>
+                                @foreach($listGuru as $guru)
+                                    <option value="{{ $guru->id_guru }}">{{ $guru->nama }}</option>
+                                @endforeach
+                            </select>
+                            <p class="text-[11px] text-gray-400 mt-1">Daftar guru diurutkan sesuai abjad.</p>
+                        </div>
+
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded text-sm transition">
                             Simpan Kelas
                         </button>
                     </form>
@@ -96,14 +124,31 @@
                                 <table class="w-full text-left border-collapse text-sm">
                                     <thead class="bg-gray-100 text-gray-600 text-xs uppercase">
                                         <tr>
+                                            <th class="p-2.5">Tingkat</th>
                                             <th class="p-2.5">Nama Kelas</th>
+                                            <th class="p-2.5">Wali Kelas</th> <!-- Kolom Baru -->
                                             <th class="p-2.5 text-right">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-100">
                                         @forelse($jurusan->kelas as $kelas)
                                             <tr class="hover:bg-gray-50">
-                                                <td class="p-2.5 text-gray-800 font-medium">🏫 {{ $kelas->nama_kelas }}</td>
+                                                <td class="p-2.5 text-gray-700 font-semibold">
+                                                    <span class="px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs border border-indigo-100">
+                                                        {{ $kelas->tingkat }}
+                                                    </span>
+                                                </td>
+                                                <td class="p-2.5 text-gray-800 font-medium">🏫 {{ $kelas->kelas }}</td>
+                                                
+                                                <!-- Menampilkan Nama Wali Kelas (Mendukung relasi waliKelas dan cek jika null) -->
+                                                <td class="p-2.5 text-gray-600 text-xs">
+                                                    @if($kelas->guru_id && method_exists($kelas, 'waliKelas') && $kelas->waliKelas)
+                                                        <span class="font-semibold text-slate-700">👨‍🏫 {{ $kelas->waliKelas->nama }}</span>
+                                                    @else
+                                                        <span class="text-gray-400 italic">Belum ditentukan</span>
+                                                    @endif
+                                                </td>
+
                                                 <td class="p-2.5 text-right">
                                                     <form action="{{ route('guru.kelas.destroy', $kelas->id_kelas) }}" method="POST" onsubmit="return confirm('Hapus kelas ini?')">
                                                         @csrf
@@ -114,7 +159,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="2" class="p-3 text-center text-gray-400 text-xs italic">
+                                                <td colspan="4" class="p-3 text-center text-gray-400 text-xs italic">
                                                     Belum ada kelas pada jurusan ini.
                                                 </td>
                                             </tr>
@@ -133,5 +178,24 @@
 
         </div>
     </div>
+
+    <!-- Script JavaScript Sederhana untuk Menangkap ID Guru -->
+    <script>
+        function setGuruId(inputElement) {
+            const val = inputElement.value;
+            const options = document.getElementById('list-guru-options').options;
+            let selectedId = '';
+
+            for (let i = 0; i < options.length; i++) {
+                if (options[i].value === val) {
+                    selectedId = options[i].getAttribute('data-id');
+                    break;
+                }
+            }
+            
+            // Masukkan id_guru ke hidden input
+            document.getElementById('guru_id_val').value = selectedId;
+        }
+    </script>
 </body>
 </html>

@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model; // Tambahkan/perbaiki baris ini
+use Illuminate\Database\Eloquent\Model;
 
 class Jawaban extends Model
 {
     protected $table = 'jawaban';
     protected $primaryKey = 'id_jawaban';
-    protected $guarded = [];
+
+    protected $fillable = ['siswa_id', 'soal_id', 'jawaban'];
 
     public function siswa()
     {

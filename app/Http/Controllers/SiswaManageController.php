@@ -12,6 +12,7 @@ use App\Models\Kelas;
 class SiswaManageController extends Controller
 {
     // Menampilkan daftar siswa, pencarian, & pagination
+    // Menampilkan daftar siswa, pencarian, & pagination
     public function index(Request $request)
     {
         $search = $request->input('search');
@@ -19,16 +20,18 @@ class SiswaManageController extends Controller
 
         $listSiswa = Siswa::with('kelas.jurusan')
             ->when($search, function ($query, $search) {
-                return $query->where('nama', 'like', "%{$search}%")
-                             ->orWhere('nisn', 'like', "%{$search}%")
-                             ->orWhereHas('kelas', function ($q) use ($search) {
-                                 $q->where('nama_kelas', 'like', "%{$search}%");
-                             });
+                // Sesuaikan 'nama' menjadi 'name'
+                return $query->where('name', 'like', "%{$search}%")
+                           ->orWhere('nisn', 'like', "%{$search}%")
+                           ->orWhereHas('kelas', function ($q) use ($search) {
+                               // Sesuaikan 'nama_kelas' menjadi 'kelas'
+                               $q->where('kelas', 'like', "%{$search}%");
+                           });
             })
             ->when($kelasFilter, function ($query, $kelasFilter) {
                 return $query->where('kelas_id', $kelasFilter);
             })
-            ->simplePaginate(30) // <-- Ubah dari paginate(10) menjadi simplePaginate(10)
+            ->simplePaginate(30)
             ->withQueryString();
 
         $listKelas = Kelas::with('jurusan')->get();
@@ -40,18 +43,18 @@ class SiswaManageController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nama_kelas_input' => 'required|exists:kelas,nama_kelas',
+            'nama_kelas_input' => 'required|exists:kelas,kelas',
             'nisn'             => 'required|string|unique:siswa,nisn',
-            'nama'             => 'required|string|max:255',
+            'name'             => 'required|string|max:255',
             'password'         => 'required|min:6'
         ]);
 
-        $kelas = Kelas::where('nama_kelas', $request->nama_kelas_input)->first();
+        $kelas = Kelas::where('kelas', $request->nama_kelas_input)->first();
 
         Siswa::create([
             'kelas_id' => $kelas->id_kelas,
             'nisn'     => $request->nisn,
-            'nama'     => $request->nama,
+            'name'     => $request->name, // Sesuaikan dengan input dan kolom database
             'password' => Hash::make($request->password)
         ]);
 

@@ -8,7 +8,8 @@ class Jurusan extends Model
 {
     protected $table = 'jurusan';
     protected $primaryKey = 'id_jurusan';
-    protected $guarded = [];
+
+    protected $fillable = ['nama_jurusan'];
 
     public function guru()
     {

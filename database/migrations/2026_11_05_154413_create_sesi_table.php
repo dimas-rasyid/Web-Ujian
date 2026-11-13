@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id('id_sesi');
             $table->foreignId('guru_id')->constrained('guru', 'id_guru')->onDelete('cascade');
             $table->string('judul');
-            $table->string('kategori');
+            $table->string('sesi');
             $table->string('token');
             $table->dateTime('waktu_mulai');
             $table->dateTime('waktu_selesai');

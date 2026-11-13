@@ -8,7 +8,9 @@ class Kelas extends Model
 {
     protected $table = 'kelas';
     protected $primaryKey = 'id_kelas';
-    protected $guarded = [];
+
+    // Tambahkan 'guru_id' di sini agar bisa disimpan ke database
+    protected $fillable = ['jurusan_id', 'kelas', 'tingkat', 'guru_id'];
 
     public function jurusan()
     {
@@ -20,9 +22,13 @@ class Kelas extends Model
         return $this->hasMany(Siswa::class, 'kelas_id', 'id_kelas');
     }
 
-    // Relasi Many-to-Many ke Sesi melalui tabel pivot sesi_kelas
-    public function sesi()
+    public function control()
     {
-        return $this->belongsToMany(Sesi::class, 'sesi_kelas', 'kelas_id', 'sesi_id', 'id_kelas', 'id_sesi');
+        return $this->hasMany(Control::class, 'kelas_id', 'id_kelas');
+    }
+
+    public function waliKelas()
+    {
+        return $this->belongsTo(Guru::class, 'guru_id', 'id_guru');
     }
 }

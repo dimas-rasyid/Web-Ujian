@@ -8,11 +8,12 @@ class Nilai extends Model
 {
     protected $table = 'nilai';
     protected $primaryKey = 'id_nilai';
-    protected $guarded = [];
 
-    public function sesi()
+    protected $fillable = ['control_id', 'siswa_id', 'skor', 'skor_up', 'status'];
+
+    public function control()
     {
-        return $this->belongsTo(Sesi::class, 'sesi_id', 'id_sesi');
+        return $this->belongsTo(Control::class, 'control_id', 'id_control');
     }
 
     public function siswa()

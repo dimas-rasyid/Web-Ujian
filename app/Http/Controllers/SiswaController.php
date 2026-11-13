@@ -21,16 +21,24 @@ class SiswaController extends Controller
                 ->withErrors(['msg' => 'Sesi login tidak valid, silakan login ulang.']);
         }
 
-        $listSesi = Sesi::whereHas('kelas', function ($query) use ($siswa) {
-                $query->where('sesi_kelas.kelas_id', $siswa->kelas_id);
+        // 1. Ambil $listSesi terlebih dahulu
+        $listSesi = Sesi::whereHas('control', function ($query) use ($siswa) {
+                $query->where('kelas_id', $siswa->kelas_id);
             })
-            ->whereDate('tgl_sesi', '>=', today())   // sembunyikan sesi hari-hari lalu
-            ->orderBy('tgl_sesi')
+            ->whereDate('waktu_mulai', '>=', today())
             ->orderBy('waktu_mulai')
             ->get();
 
-        // [id_sesi => status] milik siswa ini, untuk menentukan tombol di tampilan
-        $statusNilai = Nilai::where('siswa_id', $siswa->id_siswa)->pluck('status', 'sesi_id');
+        // 2. Baru ambil $statusNilai setelah $listSesi tersedia
+        $statusNilai = Nilai::where('siswa_id', $siswa->id_siswa)
+            ->whereHas('control', function($q) use ($listSesi) {
+                $q->whereIn('sesi_id', $listSesi->pluck('id_sesi'));
+            })
+            ->with('control')
+            ->get()
+            ->mapWithKeys(function($item) {
+                return [$item->control->sesi_id => $item->status];
+            });
 
         return view('siswa.dashboard', compact('siswa', 'listSesi', 'statusNilai'));
     }

@@ -3,141 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Sesi Ujian - {{ $sesi->judul }}</title>
+    <title>Edit Sesi Ujian</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-gray-100 min-h-screen pb-12">
-    <!-- Navbar -->
-    <nav class="bg-indigo-600 text-white px-6 py-4 flex justify-between items-center shadow">
-        <div class="font-bold text-base">Edit Sesi Ujian</div>
-        <a href="{{ route('sesi.managesesi') }}" class="bg-indigo-700 hover:bg-indigo-800 px-3 py-1.5 rounded text-sm transition">
-            &lt; Kembali
-        </a>
-    </nav>
+<body class="bg-slate-100 font-sans antialiased">
 
-    <div class="max-w-3xl mx-auto mt-6 px-4">
-        @if($errors->any())
-            <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-sm shadow">
-                <ul class="list-disc pl-5">
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
+<div class="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+    <div class="bg-white rounded-xl shadow-xl overflow-hidden border border-slate-200">
+        
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+            <h2 class="font-bold text-slate-900 text-lg">Edit Sesi Ujian</h2>
+            <a href="{{ route('sesi.managesesi') }}" class="text-xs text-slate-500 hover:text-slate-700 font-semibold">&larr; Kembali ke Manajemen Sesi</a>
+        </div>
+
+        <!-- Form Edit -->
+        <form action="{{ route('guru.sesi.update', $sesi->id_sesi) }}" method="POST" class="p-6 space-y-4">
+            @csrf
+            @method('PUT')
+
+            <!-- Judul Ujian -->
+            <div>
+                <label for="judul" class="block text-sm font-medium text-slate-700 mb-1">Judul Ujian</label>
+                <input id="judul" type="text" name="judul" required value="{{ old('judul', $sesi->judul) }}"
+                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
             </div>
-        @endif
 
-        <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-            <h3 class="font-bold text-gray-800 text-base mb-4 border-b pb-2">Form Perbarui Sesi Ujian</h3>
-
-            <form action="{{ route('sesi.update', $sesi->id_sesi) }}" method="POST">
-                @csrf
-                @method('PUT')
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-gray-700 text-xs font-bold mb-1">Judul Ujian</label>
-                        <input type="text" name="judul" value="{{ old('judul', $sesi->judul) }}" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block text-gray-700 text-xs font-bold mb-1">Kategori (Mata Pelajaran)</label>
-                        <input type="text" name="kategori" value="{{ old('kategori', $sesi->kategori) }}" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">
-                    </div>
+            <!-- Mata Pelajaran (Multi-Select / Checkbox) -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Mata Pelajaran Ujian</label>
+                <div class="border border-slate-200 rounded-lg max-h-40 overflow-y-auto p-3 bg-white grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    @php
+                        $selectedMapelIds = $sesi->control ? $sesi->control->pluck('mapel_id')->toArray() : [];
+                    @endphp
+                    @isset($listMapel)
+                        @foreach($listMapel as $mapel)
+                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer border border-slate-200 rounded-md px-2.5 py-1.5 hover:bg-indigo-50 transition">
+                                <input type="checkbox" name="mapel_ids[]" value="{{ $mapel->id_mapel }}"
+                                    class="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                                    {{ in_array($mapel->id_mapel, old('mapel_ids', $selectedMapelIds)) ? 'checked' : '' }}>
+                                <span class="font-medium">{{ $mapel->mapel }}</span>
+                            </label>
+                        @endforeach
+                    @endisset
                 </div>
+            </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Sesi Ke / Keterangan</label>
-                        <select id="selectSesi" name="sesi" onchange="pilihLabelSesi(this.value)"
-                                class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                            <option value="" disabled>Pilih Sesi</option>
-                            <option value="Sesi 1" {{ (old('sesi', $sesi->sesi ?? '') === 'Sesi 1') ? 'selected' : '' }}>Sesi 1</option>
-                            <option value="Sesi 2" {{ (old('sesi', $sesi->sesi ?? '') === 'Sesi 2') ? 'selected' : '' }}>Sesi 2</option>
-                            <option value="Sesi 3" {{ (old('sesi', $sesi->sesi ?? '') === 'Sesi 3') ? 'selected' : '' }}>Sesi 3</option>
-                            <option value="Sesi Cadangan" {{ (old('sesi', $sesi->sesi ?? '') === 'Sesi Cadangan') ? 'selected' : '' }}>Sesi Cadangan</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-gray-700 text-xs font-bold mb-1">Tanggal Ujian</label>
-                        <input type="date" name="tgl_sesi" value="{{ old('tgl_sesi', $sesi->tgl_sesi) }}" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <div>
-                        <div class="flex justify-between items-center mb-1">
-                            <label class="block text-xs font-bold text-slate-700">Token Ujian</label>
-                            <button type="button" onclick="acakToken()" class="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                                Acak Token
-                            </button>
-                        </div>
-                        <input type="text" id="inputToken" name="token" value="{{ old('token', $sesi->token) }}" required uppercase maxlength="10"
-                            class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm font-mono uppercase tracking-widest focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                    <div>
-                        <label class="block text-gray-700 text-xs font-bold mb-1">Waktu Mulai</label>
-                        <input type="time" name="waktu_mulai" value="{{ old('waktu_mulai', $sesi->waktu_mulai) }}" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block text-gray-700 text-xs font-bold mb-1">Waktu Selesai</label>
-                        <input type="time" name="waktu_selesai" value="{{ old('waktu_selesai', $sesi->waktu_selesai) }}" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block text-gray-700 text-xs font-bold mb-1">Durasi (Menit)</label>
-                        <input type="number" name="durasi" value="{{ old('durasi', $sesi->durasi) }}" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-xs font-bold mb-1">Guru Penanggung Jawab</label>
-                    <select name="guru_id" required class="w-full px-3 py-2 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500">
-                        @foreach($guruList as $guru)
-                            <option value="{{ $guru->id_guru }}" {{ $sesi->guru_id == $guru->id_guru ? 'selected' : '' }}>
-                                {{ $guru->nama }}
+            <!-- Guru Penanggung Jawab -->
+            <div>
+                <label for="guru_id" class="block text-sm font-medium text-slate-700 mb-1">Guru Penanggung Jawab (PJ)</label>
+                <select id="guru_id" name="guru_id" required
+                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="">Pilih Guru Pengampu...</option>
+                    @isset($listGuru)
+                        @foreach($listGuru as $guru)
+                            <option value="{{ $guru->id_guru }}" {{ old('guru_id', $sesi->guru_id) == $guru->id_guru ? 'selected' : '' }}>
+                                {{ $guru->nama }} ({{ ucfirst($guru->role) }})
                             </option>
+                        @endforeach
+                    @endisset
+                </select>
+            </div>
+
+            <!-- Sesi dan Tanggal -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="sesi" class="block text-sm font-medium text-slate-700 mb-1">Label sesi</label>
+                    <select id="sesi" name="sesi" required
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        @foreach(['Sesi 1', 'Sesi 2', 'Sesi 3', 'Sesi Cadangan'] as $opt)
+                            <option value="{{ $opt }}" {{ old('sesi', $sesi->sesi) == $opt ? 'selected' : '' }}>{{ $opt }}</option>
                         @endforeach
                     </select>
                 </div>
 
-                <div class="mb-6">
-                    <label class="block text-gray-700 text-xs font-bold mb-1">Target Kelas</label>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-36 overflow-y-auto p-2 border rounded-lg bg-gray-50">
-                        @php $selectedKelas = $sesi->kelas->pluck('id_kelas')->toArray(); @endphp
-                        @foreach($kelasList as $kelas)
-                            <label class="flex items-center space-x-2 text-xs font-medium text-gray-700 cursor-pointer">
-                                <input type="checkbox" name="kelas_id[]" value="{{ $kelas->id_kelas }}" {{ in_array($kelas->id_kelas, $selectedKelas) ? 'checked' : '' }} class="h-4 w-4 text-indigo-600 rounded">
-                                <span>{{ $kelas->nama_kelas }}</span>
-                            </label>
-                        @endforeach
-                    </div>
+                <div>
+                    <label for="tgl_sesi" class="block text-sm font-medium text-slate-700 mb-1">Tanggal pelaksanaan</label>
+                    @php
+                        $tglSesiOnly = $sesi->waktu_mulai ? date('Y-m-d', strtotime($sesi->waktu_mulai)) : date('Y-m-d');
+                    @endphp
+                    <input id="tgl_sesi" type="date" name="tgl_sesi" required value="{{ old('tgl_sesi', $tglSesiOnly) }}"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
+            </div>
 
-                <div class="flex justify-end gap-2">
-                    <a href="{{ route('sesi.managesesi') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold px-4 py-2 rounded-lg text-xs transition">
-                        Batal
-                    </a>
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2 rounded-lg text-xs transition shadow">
-                        Simpan Perubahan
-                    </button>
+            <!-- Waktu Mulai, Selesai, Durasi -->
+            <div class="grid grid-cols-3 gap-3 sm:gap-4">
+                <div>
+                    <label for="waktu_mulai" class="block text-sm font-medium text-slate-700 mb-1">Jam mulai</label>
+                    @php
+                        $jamMulaiOnly = $sesi->waktu_mulai ? date('H:i', strtotime($sesi->waktu_mulai)) : '';
+                    @endphp
+                    <input id="waktu_mulai" type="time" name="waktu_mulai" required value="{{ old('waktu_mulai', $jamMulaiOnly) }}"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
-            </form>
-        </div>
+                <div>
+                    <label for="waktu_selesai" class="block text-sm font-medium text-slate-700 mb-1">Jam selesai</label>
+                    @php
+                        $jamSelesaiOnly = $sesi->waktu_selesai ? date('H:i', strtotime($sesi->waktu_selesai)) : '';
+                    @endphp
+                    <input id="waktu_selesai" type="time" name="waktu_selesai" required value="{{ old('waktu_selesai', $jamSelesaiOnly) }}"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label for="durasi" class="block text-sm font-medium text-slate-700 mb-1">Durasi (menit)</label>
+                    <input id="durasi" type="number" name="durasi" required min="1" value="{{ old('durasi', $sesi->durasi) }}"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+            </div>
+
+            <!-- Token Ujian -->
+            <div>
+                <label for="token" class="block text-sm font-medium text-slate-700 mb-1">Token ujian</label>
+                <input id="token" type="text" name="token" required maxlength="10" value="{{ old('token', $sesi->token) }}"
+                    class="w-full max-w-xs px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono font-bold uppercase bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <!-- Kelas Peserta -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Kelas peserta</label>
+                <div class="border border-slate-200 rounded-lg max-h-48 overflow-y-auto p-3 bg-white">
+                    @php
+                        $selectedKelasIds = $sesi->control ? $sesi->control->pluck('kelas_id')->toArray() : [];
+                        $kelasPerJurusan = $listKelas->groupBy(fn($k) => optional($k->jurusan)->nama_jurusan ?? 'Tanpa jurusan');
+                    @endphp
+
+                    @foreach($kelasPerJurusan as $namaJurusan => $kelasGroup)
+                        <div class="mb-3">
+                            <span class="text-xs font-semibold text-slate-600 mb-1 block">{{ $namaJurusan }}</span>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                @foreach($kelasGroup as $kelas)
+                                    <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer border border-slate-200 rounded-md px-2 py-1.5 hover:bg-indigo-50 transition">
+                                        <input type="checkbox" name="kelas_ids[]" value="{{ $kelas->id_kelas }}"
+                                            class="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                                            {{ in_array($kelas->id_kelas, old('kelas_ids', $selectedKelasIds)) ? 'checked' : '' }}>
+                                        <span>{{ $kelas->kelas }} ({{ $kelas->tingkat }})</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <!-- Tombol Aksi -->
+            <div class="flex justify-end gap-2 pt-4 border-t border-slate-200">
+                <a href="{{ route('sesi.managesesi') }}" class="border border-slate-300 hover:bg-slate-100 text-slate-700 px-4 py-2 rounded-lg text-sm transition">Batal</a>
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2 rounded-lg text-sm transition shadow-sm">Simpan Perubahan</button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <script>
-        function acakToken() {
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            let token = '';
-            for (let i = 0; i < 5; i++) {
-                token += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            document.getElementById('inputToken').value = token;
-        }
-
-        function acakSesi() {
-            const nomorSesi = Math.floor(Math.random() * 5) + 1;
-            document.getElementById('inputSesi').value = 'Sesi ' + nomorSesi;
-        }
-    </script>
 </body>
 </html>

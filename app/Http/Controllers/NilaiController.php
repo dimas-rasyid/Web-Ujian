@@ -107,4 +107,22 @@ class NilaiController extends Controller
         return redirect()->route('guru.sesi.nilai', $id_sesi)
             ->with('success', 'Koreksi dan penilaian berhasil disimpan.');
     }
+
+    // Fungsi untuk mereset total dengan menghapus rekap nilai & riwayat jawaban siswa
+    public function reset($id_sesi, $siswa_id)
+    {
+        // 1. Hapus riwayat jawaban siswa berdasarkan soal yang ada di sesi tersebut
+        \App\Models\Jawaban::where('siswa_id', $siswa_id)
+            ->whereHas('soal', function ($query) use ($id_sesi) {
+                $query->where('sesi_id', $id_sesi); // Sesuai kolom foreign key di tabel soal
+            })
+            ->delete();
+
+        // 2. Hapus data rekap nilai siswa pada sesi tersebut (gunakan sesi_id sesuai skema database)
+        \App\Models\Nilai::where('sesi_id', $id_sesi)     // Perhatikan: sesi_id, bukan id_sesi
+            ->where('siswa_id', $siswa_id)
+            ->delete();
+
+        return redirect()->back()->with('success', 'Ujian siswa berhasil direset total. Siswa dapat mengulang dari awal.');
+    }
 }

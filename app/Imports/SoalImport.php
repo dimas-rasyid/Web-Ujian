@@ -2,6 +2,7 @@
 
 namespace App\Imports;
 
+use App\Models\Control;
 use App\Models\Soal;
 use App\Models\OpsiSoal;
 use Maatwebsite\Excel\Concerns\ToCollection;
@@ -19,8 +20,13 @@ class SoalImport implements ToCollection, WithHeadingRow
 
     public function collection(Collection $rows)
     {
+        // Ambil control_id berdasarkan sesi_id sesuai ERD
+        $control = Control::where('sesi_id', $this->idSesi)->first();
+        if (!$control) {
+            return;
+        }
+
         foreach ($rows as $row) {
-            // Sesuaikan key header excel Anda (misal: soal, a, b, c, d, e, kunci)
             $pertanyaan = $row['soal'] ?? null;
             if (!$pertanyaan) continue; // Lewati jika baris soal kosong
 
@@ -31,18 +37,18 @@ class SoalImport implements ToCollection, WithHeadingRow
             $opsiE = $row['e'] ?? null;
             $kunci = strtoupper(trim($row['kunci'] ?? ''));
 
-            // 1. Tentukan Tipe Soal (Jika tidak ada opsi sama sekali dan kunci kosong, maka Essay)
+            // Tentukan Tipe Soal
             $adaOpsi = !empty($opsiA) || !empty($opsiB) || !empty($opsiC) || !empty($opsiD) || !empty($opsiE);
             $tipeSoal = ($adaOpsi && !empty($kunci)) ? 'Pilihan Ganda' : 'Essay';
 
-            // Simpan Soal
+            // Simpan Soal (menggunakan control_id sesuai ERD)
             $soal = Soal::create([
-                'sesi_id'    => $this->idSesi,
+                'control_id' => $control->id_control,
                 'tipe'       => $tipeSoal,
                 'pertanyaan' => $pertanyaan,
             ]);
 
-            // 2. Jika Pilihan Ganda, simpan hanya opsi yang terisi (mendukung 3, 4, atau 5 opsi)
+            // Jika Pilihan Ganda, simpan opsi pilihan ke tabel opsi_soal (text_opsi)
             if ($tipeSoal === 'Pilihan Ganda') {
                 $daftarOpsi = [
                     'A' => $opsiA,
@@ -57,7 +63,7 @@ class SoalImport implements ToCollection, WithHeadingRow
                         OpsiSoal::create([
                             'soal_id'    => $soal->id_soal,
                             'kode_opsi'  => $kode,
-                            'teks_opsi'  => $teks,
+                            'text_opsi'  => $teks, // Sesuai kolom DB (text_opsi)
                             'is_correct' => ($kode === $kunci) ? 1 : 0,
                         ]);
                     }

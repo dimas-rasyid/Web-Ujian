@@ -25,26 +25,6 @@
 
         <main class="max-w-7xl mx-auto px-4 py-6 pb-12">
 
-            {{-- Notifikasi --}}
-            @if(session('success'))
-                <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)" x-show="show" x-transition
-                    class="mb-4 flex items-start justify-between gap-3 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-lg text-sm">
-                    <span>{{ session('success') }}</span>
-                    <button type="button" @click="show = false" class="text-emerald-700 hover:text-emerald-900" aria-label="Tutup">&times;</button>
-                </div>
-            @endif
-
-            @if($errors->any())
-                <div class="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
-                    <div class="font-medium mb-1">Sesi belum tersimpan. Periksa isian berikut:</div>
-                    <ul class="list-disc pl-5 space-y-0.5">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
             {{-- Header halaman: pencarian + tombol tambah --}}
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                 <div>
@@ -73,111 +53,98 @@
             {{-- Tabel sesi --}}
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="w-full min-w-[960px] text-left text-sm">
-                        <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs font-semibold">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead class="bg-slate-50 text-slate-700 uppercase text-xs tracking-wider border-b border-slate-200">
                             <tr>
-                                <th class="px-4 py-3 w-12">No</th>
-                                <th class="px-4 py-3">Ujian</th>
-                                <th class="px-4 py-3">Guru penanggung jawab</th>
-                                <th class="px-4 py-3">Kelas</th>
-                                <th class="px-4 py-3">Jadwal</th>
-                                <th class="px-4 py-3">Token</th>
-                                <th class="px-4 py-3">Status</th>
-                                <th class="px-4 py-3 text-right">Aksi</th>
+                                <th class="px-4 py-3 font-semibold">No</th>
+                                <th class="px-4 py-3 font-semibold">Judul / Mapel</th>
+                                <th class="px-4 py-3 font-semibold">PJ / Guru</th>
+                                <th class="px-4 py-3 font-semibold">Sesi & Waktu</th>
+                                <th class="px-4 py-3 font-semibold">Token</th>
+                                <th class="px-4 py-3 font-semibold">Kelas Peserta</th>
+                                <th class="px-4 py-3 font-semibold text-right">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100">
+                        <tbody class="divide-y divide-slate-100 text-slate-700">
                             @forelse($listSesi as $index => $sesi)
-                                @php
-                                    $tgl     = \Carbon\Carbon::parse($sesi->tgl_sesi)->format('Y-m-d');
-                                    $mulai   = \Carbon\Carbon::parse($tgl . ' ' . $sesi->waktu_mulai);
-                                    $selesai = \Carbon\Carbon::parse($tgl . ' ' . $sesi->waktu_selesai);
+                                <tr class="hover:bg-slate-50/60 transition">
+                                    <!-- Nomor -->
+                                    <td class="px-4 py-3 text-slate-500">
+                                        {{ $listSesi->firstItem() + $index }}
+                                    </td>
 
-                                    if (now()->lt($mulai)) {
-                                        $status = ['Belum mulai', 'bg-slate-100 text-slate-600'];
-                                    } elseif (now()->lte($selesai)) {
-                                        $status = ['Berlangsung', 'bg-emerald-100 text-emerald-700'];
-                                    } else {
-                                        $status = ['Selesai', 'bg-slate-200 text-slate-500'];
-                                    }
-
-                                    $kelasSesi = $sesi->kelas;
-                                @endphp
-                                <tr class="hover:bg-slate-50 align-top">
-                                    <td class="px-4 py-3 text-slate-400">{{ $listSesi->firstItem() + $index }}</td>
-
+                                    <!-- Judul & Mapel -->
                                     <td class="px-4 py-3">
-                                        <div class="font-medium text-slate-900">{{ $sesi->judul }}</div>
-                                        <div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
-                                            <span class="text-slate-500">{{ $sesi->kategori ?? 'Umum' }}</span>
-                                            <span class="bg-indigo-50 text-indigo-700 rounded px-1.5 py-0.5 font-medium">{{ $sesi->sesi }}</span>
+                                        <div class="font-semibold text-slate-900">{{ $sesi->judul }}</div>
+                                        <div class="text-xs text-indigo-600 font-medium mt-0.5">
+                                            {{ optional($sesi->mapel)->mapel ?? '-' }}
                                         </div>
                                     </td>
 
-                                    <td class="px-4 py-3 text-slate-700">
-                                        {{ optional($sesi->guru)->nama ?? '-' }}
+                                    <!-- Guru PJ -->
+                                    <td class="px-4 py-3">
+                                        <div class="text-slate-900 font-medium">{{ optional($sesi->guru)->nama ?? '-' }}</div>
+                                        <div class="text-xs text-slate-400 uppercase">{{ optional($sesi->guru)->role ?? '' }}</div>
                                     </td>
 
+                                    <!-- Sesi & Waktu Pelaksanaan -->
                                     <td class="px-4 py-3">
-                                        <div class="flex flex-wrap gap-1">
-                                            @foreach($kelasSesi->take(3) as $k)
-                                                <span class="bg-slate-100 text-slate-700 rounded px-1.5 py-0.5 text-xs">{{ $k->nama_kelas }}</span>
-                                            @endforeach
-                                            @if($kelasSesi->count() > 3)
-                                                <span class="bg-slate-200 text-slate-600 rounded px-1.5 py-0.5 text-xs cursor-help"
-                                                    title="{{ $kelasSesi->skip(3)->pluck('nama_kelas')->join(', ') }}">
-                                                    +{{ $kelasSesi->count() - 3 }}
-                                                </span>
-                                            @endif
+                                        <div class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-700 mb-1">
+                                            {{ $sesi->sesi }}
+                                        </div>
+                                        <div class="text-xs text-slate-500">
+                                            <div>📅 {{ \Carbon\Carbon::parse($sesi->waktu_mulai)->format('d M Y') }}</div>
+                                            <div>⏰ {{ \Carbon\Carbon::parse($sesi->waktu_mulai)->format('H:i') }} - {{ \Carbon\Carbon::parse($sesi->waktu_selesai)->format('H:i') }} WIB</div>
                                         </div>
                                     </td>
 
-                                    <td class="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
-                                        <div class="font-medium text-slate-800">{{ $mulai->format('d/m/Y') }}</div>
-                                        <div>{{ substr($sesi->waktu_mulai, 0, 5) }} - {{ substr($sesi->waktu_selesai, 0, 5) }}</div>
-                                        <div class="text-slate-500">Durasi {{ $sesi->durasi }} menit</div>
-                                    </td>
-
+                                    <!-- Token Ujian -->
                                     <td class="px-4 py-3">
-                                        <button type="button" onclick="salinToken('{{ $sesi->token }}', this)"
-                                                title="Klik untuk menyalin"
-                                                class="font-mono font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded px-2 py-1 text-sm transition">
-                                            {{ $sesi->token }}
-                                        </button>
-                                    </td>
-
-                                    <td class="px-4 py-3">
-                                        <span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium {{ $status[1] }}">{{ $status[0] }}</span>
-                                    </td>
-
-                                    <td class="p-4 text-center space-x-1 flex justify-center items-center">
-                                        <!-- Tombol Edit -->
-                                        <a href="{{ route('sesi.edit', $sesi->id_sesi) }}" class="bg-amber-50 hover:bg-amber-100 text-amber-700 font-semibold px-2.5 py-1 rounded text-xs transition border border-amber-200">
-                                            Edit
-                                        </a>
-
-                                        <!-- Tombol Hapus (yang sudah ada) -->
-                                        <form action="{{ route('sesi.destroy', $sesi->id_sesi) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus sesi ini?')" class="inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-2.5 py-1 rounded text-xs transition border border-red-200">
-                                                Hapus
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="font-mono font-bold bg-slate-100 text-slate-800 px-2 py-1 rounded text-xs tracking-wider border border-slate-200">
+                                                {{ $sesi->token }}
+                                            </span>
+                                            <button type="button" onclick="salinToken('{{ $sesi->token }}', this)"
+                                                class="text-xs text-indigo-600 hover:text-indigo-800 font-medium px-1.5 py-1 rounded hover:bg-indigo-50 transition" title="Salin Token">
+                                                Salin
                                             </button>
-                                        </form>
+                                        </div>
+                                    </td>
+
+                                    <!-- Kelas Peserta (Many-to-Many via relasi kelas) -->
+                                    <td class="px-4 py-3 max-w-xs">
+                                        <div class="flex flex-wrap gap-1">
+                                            @foreach($sesi->kelas as $k)
+                                                <span class="bg-slate-100 text-slate-700 text-[11px] px-2 py-0.5 rounded-md border border-slate-200">
+                                                    {{ $k->kelas }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    </td>
+
+                                    <!-- Aksi (Edit & Hapus) -->
+                                    <td class="px-4 py-3 text-right">
+                                        <div class="flex items-center justify-end gap-2">
+                                            <!-- Tombol Edit Sesi -->
+                                            <a href="{{ route('guru.sesi.edit', $sesi->id_sesi) }}" class="text-slate-500 hover:text-indigo-600 p-1 rounded transition" title="Edit Sesi">
+                                                ✏️
+                                            </a>
+
+                                            <!-- Tombol Hapus -->
+                                            <form action="{{ route('sesi.destroy', $sesi->id_sesi) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus sesi ujian ini?')" class="inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-slate-500 hover:text-red-600 p-1 rounded transition" title="Hapus Sesi">
+                                                    🗑️
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="px-4 py-12 text-center">
-                                        <div class="text-slate-600 text-sm">
-                                            {{ !empty($search) ? 'Tidak ada sesi yang cocok dengan pencarian.' : 'Belum ada sesi ujian.' }}
-                                        </div>
-                                        @if(empty($search))
-                                            <button type="button" @click="openForm = true"
-                                                    class="mt-3 text-indigo-600 hover:text-indigo-700 text-sm font-medium">
-                                                Buat sesi pertama
-                                            </button>
-                                        @endif
+                                    <td colspan="7" class="px-4 py-8 text-center text-slate-400 italic">
+                                        Belum ada sesi ujian yang terdaftar. Silakan buat sesi baru melalui tombol di atas.
                                     </td>
                                 </tr>
                             @endforelse
@@ -185,15 +152,12 @@
                     </table>
                 </div>
 
-                {{-- Pagination --}}
-                <div class="px-4 py-3 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-slate-500">
-                    <div>
-                        Menampilkan {{ $listSesi->firstItem() ?? 0 }} - {{ $listSesi->lastItem() ?? 0 }} dari {{ $listSesi->total() }} sesi
+                <!-- Paging / Pagination links -->
+                @if($listSesi->hasPages())
+                    <div class="px-4 py-3 border-t border-slate-200 bg-slate-50">
+                        {{ $listSesi->links() }}
                     </div>
-                    <div class="overflow-x-auto max-w-full">
-                        {{ $listSesi->withQueryString()->onEachSide(1)->links() }}
-                    </div>
-                </div>
+                @endif
             </div>
         </main>
 
@@ -215,7 +179,7 @@
 
                         <div class="px-6 py-5 overflow-y-auto space-y-4">
 
-                            <!-- Judul -->
+                            <!-- Judul Ujian -->
                             <div x-data="{
                                     open: false,
                                     q: '{{ addslashes(old('judul')) }}',
@@ -252,145 +216,72 @@
                                         placeholder="Ketik judul baru atau pilih dari riwayat..."
                                         class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
 
-                                    <!-- Dropdown tepat di bawah input -->
                                     <ul x-ref="list" x-show="open" x-cloak
                                         class="absolute left-0 right-0 top-full mt-1 z-50 max-h-48 overflow-y-auto bg-white border border-slate-300 rounded-lg shadow-lg py-1 text-sm">
-                                        @foreach($listBankSesi->pluck('judul')->filter()->unique() as $judulBank)
-                                            <li data-judul="{{ strtolower($judulBank) }}"
-                                                data-label="{{ $judulBank }}"
-                                                x-show="matches($el.dataset.judul)"
-                                                @click="pick($el.dataset.label)"
-                                                class="px-3 py-2 cursor-pointer text-slate-700 hover:bg-indigo-50 hover:text-indigo-700">
-                                                {{ $judulBank }}
-                                            </li>
-                                        @endforeach
+                                        @isset($listBankSesi)
+                                            @foreach($listBankSesi->pluck('judul')->filter()->unique() as $judulBank)
+                                                <li data-judul="{{ strtolower($judulBank) }}"
+                                                    data-label="{{ $judulBank }}"
+                                                    x-show="matches($el.dataset.judul)"
+                                                    @click="pick($el.dataset.label)"
+                                                    class="px-3 py-2 cursor-pointer text-slate-700 hover:bg-indigo-50 hover:text-indigo-700">
+                                                    {{ $judulBank }}
+                                                </li>
+                                            @endforeach
+                                        @endisset
 
                                         <li x-show="noResult()" x-cloak class="px-3 py-2 text-slate-400 italic">
                                             Tidak ada riwayat yang cocok, judul baru akan dipakai
                                         </li>
                                     </ul>
                                 </div>
-
                                 <p class="text-[11px] text-slate-500 mt-1">Ketik manual secara bebas atau klik untuk memilih judul dari sesi yang sudah pernah dibuat.</p>
                             </div>
 
-                            <!-- Mapel dan Guru -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <!-- Kategori -->
-                                <div x-data="{
-                                        open: false,
-                                        q: '{{ addslashes(old('kategori')) }}',
-                                        matches(kategori) {
-                                            return kategori.includes(this.q.toLowerCase().trim());
-                                        },
-                                        noResult() {
-                                            const items = this.$refs.list.querySelectorAll('li[data-kategori]');
-                                            const q = this.q.toLowerCase().trim();
-                                            return items.length > 0 && ![...items].some(li => li.dataset.kategori.includes(q));
-                                        },
-                                        pick(kategori) {
-                                            this.q = kategori;
-                                            this.open = false;
-                                        },
-                                        pickFirst() {
-                                            const q = this.q.toLowerCase().trim();
-                                            const first = [...this.$refs.list.querySelectorAll('li[data-kategori]')]
-                                                .find(li => li.dataset.kategori.includes(q));
-                                            if (first) this.pick(first.dataset.label);
-                                        }
-                                    }"
-                                    @click.away="open = false"
-                                    @keydown.escape="open = false">
-
-                                    <label for="kategori" class="block text-sm font-medium text-slate-700 mb-1">Kategori atau mapel</label>
-
-                                    <div class="relative">
-                                        <input id="kategori" type="text" name="kategori" autocomplete="off"
-                                            x-model="q"
-                                            @focus="open = true"
-                                            @input="open = true"
-                                            @keydown.enter="if (open && !noResult() && $refs.list.querySelector('li[data-kategori]')) { $event.preventDefault(); pickFirst(); }"
-                                            placeholder="Contoh: Produktif TKJ"
-                                            class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-
-                                        <!-- Dropdown tepat di bawah input -->
-                                        <ul x-ref="list" x-show="open" x-cloak
-                                            class="absolute left-0 right-0 top-full mt-1 z-50 max-h-48 overflow-y-auto bg-white border border-slate-300 rounded-lg shadow-lg py-1 text-sm">
-                                            @foreach($listBankSesi->pluck('kategori')->filter()->unique(fn($k) => strtolower(trim($k))) as $kategoriBank)
-                                                <li data-kategori="{{ strtolower($kategoriBank) }}"
-                                                    data-label="{{ $kategoriBank }}"
-                                                    x-show="matches($el.dataset.kategori)"
-                                                    @click="pick($el.dataset.label)"
-                                                    class="px-3 py-2 cursor-pointer text-slate-700 hover:bg-indigo-50 hover:text-indigo-700">
-                                                    {{ $kategoriBank }}
-                                                </li>
-                                            @endforeach
-
-                                            <li x-show="noResult()" x-cloak class="px-3 py-2 text-slate-400 italic">
-                                                Tidak ada riwayat yang cocok, kategori baru akan dipakai
-                                            </li>
-                                        </ul>
-                                    </div>
-
-                                    <p class="text-[11px] text-slate-500 mt-1">Ketik manual atau klik untuk memilih dari kategori yang pernah dibuat.</p>
+                            <!-- Mata Pelajaran -->
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="block text-sm font-medium text-slate-700">Mata Pelajaran Ujian</label>
+                                    <span class="text-xs text-slate-500"><span id="mapelCount">0</span> mapel dipilih</span>
                                 </div>
 
-                                <div class="mb-4"
-                                    x-data="{
-                                        open: false,
-                                        q: '{{ addslashes(old('guru_nama_input')) }}',
-                                        matches(nama) {
-                                            return nama.includes(this.q.toLowerCase().trim());
-                                        },
-                                        noResult() {
-                                            const items = this.$refs.list.querySelectorAll('li[data-nama]');
-                                            const q = this.q.toLowerCase().trim();
-                                            return ![...items].some(li => li.dataset.nama.includes(q));
-                                        },
-                                        pick(nama) {
-                                            this.q = nama;
-                                            this.open = false;
-                                        },
-                                        pickFirst() {
-                                            const q = this.q.toLowerCase().trim();
-                                            const first = [...this.$refs.list.querySelectorAll('li[data-nama]')]
-                                                .find(li => li.dataset.nama.includes(q));
-                                            if (first) this.pick(first.dataset.label);
-                                        }
-                                    }"
-                                    @click.away="open = false"
-                                    @keydown.escape="open = false">
+                                <!-- Input Pencarian Mapel Sederhana -->
+                                <input type="text" oninput="filterMapel(this.value)" placeholder="Cari mata pelajaran..."
+                                    class="w-full px-3 py-1.5 mb-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
 
-                                    <label for="guru" class="block text-sm font-medium text-slate-700 mb-1">Guru penanggung jawab</label>
-
-                                    <div class="relative">
-                                        <input id="guru" type="text" name="guru_nama_input" required autocomplete="off"
-                                            x-model="q"
-                                            @focus="open = true"
-                                            @input="open = true"
-                                            @keydown.enter="if (open) { $event.preventDefault(); pickFirst(); }"
-                                            placeholder="Ketik nama guru"
-                                            class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-
-                                        <!-- Dropdown tepat di bawah input -->
-                                        <ul x-ref="list" x-show="open" x-cloak
-                                            class="absolute left-0 right-0 top-full mt-1 z-50 max-h-48 overflow-y-auto bg-white border border-slate-300 rounded-lg shadow-lg py-1 text-sm">
-                                            @foreach($listGuru as $guru)
-                                                <li data-nama="{{ strtolower($guru->nama) }}"
-                                                    data-label="{{ $guru->nama }}"
-                                                    x-show="matches($el.dataset.nama)"
-                                                    @click="pick($el.dataset.label)"
-                                                    class="px-3 py-2 cursor-pointer text-slate-700 hover:bg-indigo-50 hover:text-indigo-700">
-                                                    {{ $guru->nama }}
-                                                </li>
+                                <div class="border border-slate-200 rounded-lg max-h-44 overflow-y-auto p-3 bg-white">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="mapelContainer">
+                                        @isset($listMapel)
+                                            @foreach($listMapel as $mapel)
+                                                <label data-mapel="{{ strtolower($mapel->mapel) }}"
+                                                    class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer border border-slate-200 rounded-md px-2.5 py-1.5 hover:bg-indigo-50 has-[:checked]:bg-indigo-50 has-[:checked]:border-indigo-300 transition">
+                                                    <input type="checkbox" name="mapel_ids[]" value="{{ $mapel->id_mapel }}"
+                                                        onchange="updateMapelCount()"
+                                                        class="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                                                        {{ (is_array(old('mapel_ids')) && in_array($mapel->id_mapel, old('mapel_ids'))) ? 'checked' : '' }}>
+                                                    <span class="font-medium">{{ $mapel->mapel }}</span>
+                                                </label>
                                             @endforeach
-
-                                            <li x-show="noResult()" x-cloak class="px-3 py-2 text-slate-400 italic">
-                                                Guru tidak ditemukan
-                                            </li>
-                                        </ul>
+                                        @endisset
                                     </div>
                                 </div>
+                                <p id="mapelError" class="hidden text-xs text-red-600 mt-1">Pilih minimal satu mata pelajaran.</p>
+                            </div>
+
+                            <!-- Guru Penanggung Jawab (PJ Sesi) -->
+                            <div>
+                                <label for="guru_id" class="block text-sm font-medium text-slate-700 mb-1">Guru Penanggung Jawab (PJ)</label>
+                                <select id="guru_id" name="guru_id" required
+                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="">Pilih Guru Pengampu...</option>
+                                    @isset($listGuru)
+                                        @foreach($listGuru as $guru)
+                                            <option value="{{ $guru->id_guru }}" {{ (old('guru_id') == $guru->id_guru) ? 'selected' : '' }}>
+                                                {{ $guru->nama }} ({{ ucfirst($guru->role) }})
+                                            </option>
+                                        @endforeach
+                                    @endisset
+                                </select>
                             </div>
 
                             <!-- Sesi dan Tgl -->
@@ -469,13 +360,14 @@
                                             </div>
                                             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                                 @foreach($kelasGroup as $kelas)
-                                                    <label data-kelas="{{ strtolower($kelas->nama_kelas . ' ' . $namaJurusan) }}"
+                                                    {{-- Sesuaikan properti menjadi $kelas->kelas sesuai database terbaru --}}
+                                                    <label data-kelas="{{ strtolower($kelas->kelas . ' ' . $namaJurusan) }}"
                                                         class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer border border-slate-200 rounded-md px-2 py-1.5 hover:bg-indigo-50 has-[:checked]:bg-indigo-50 has-[:checked]:border-indigo-300 transition">
                                                         <input type="checkbox" name="kelas_ids[]" value="{{ $kelas->id_kelas }}"
                                                             onchange="updateKelasCount()"
                                                             class="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
                                                             {{ (is_array(old('kelas_ids')) && in_array($kelas->id_kelas, old('kelas_ids'))) ? 'checked' : '' }}>
-                                                        <span>{{ $kelas->nama_kelas }}</span>
+                                                        <span>{{ $kelas->kelas }} ({{ $kelas->tingkat }})</span>
                                                     </label>
                                                 @endforeach
                                             </div>
@@ -528,6 +420,58 @@
             }
         }
 
+        
+        // ---------- Multiple Mapel ----------
+        function updateMapelCount() {
+            const checkboxes = document.querySelectorAll('input[name="mapel_ids[]"]:checked');
+            document.getElementById('mapelCount').innerText = checkboxes.length;
+        }
+
+        function filterMapel(query) {
+            const q = query.toLowerCase();
+            const items = document.querySelectorAll('#mapelContainer label[data-mapel]');
+            items.forEach(item => {
+                const text = item.getAttribute('data-mapel');
+                if (text.includes(q)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // Jalankan saat halaman dimuat untuk menghitung state awal jika ada old()
+        document.addEventListener('DOMContentLoaded', () => {
+            updateMapelCount();
+        });
+
+        function cekFormSesi(event) {
+            const kelasChecked = document.querySelectorAll('inputname="kelas_ids[]"]:checked').length;
+            const mapelChecked = document.querySelectorAll('input[name="mapel_ids[]"]:checked').length;
+            
+            let isValid = true;
+
+            if (mapelChecked === 0) {
+                document.getElementById('mapelError').classList.remove('hidden');
+                isValid = false;
+            } else {
+                document.getElementById('mapelError').classList.add('hidden');
+            }
+
+            if (kelasChecked === 0) {
+                document.getElementById('kelasError').classList.remove('hidden');
+                isValid = false;
+            } else {
+                document.getElementById('kelasError').classList.add('hidden');
+            }
+
+            if (!isValid) {
+                event.preventDefault();
+                alert('Harap pilih minimal satu Mata Pelajaran dan satu Kelas.');
+            }
+        }
+
+
         // ---------- Picker kelas ----------
         const semuaKelas = () => document.querySelectorAll('input[name="kelas_ids[]"]');
 
@@ -568,6 +512,7 @@
             return true;
         }
 
+
         // ---------- Jam otomatis per label sesi (tersimpan di browser) ----------
         const defaultJadwalSesi = {
             "Sesi 1":        { mulai: "07:30", selesai: "09:30" },
@@ -593,23 +538,25 @@
 
             updateKelasCount();
 
-            selectSesi.addEventListener('change', function () {
-                const nama = this.value;
-                if (!nama) return;
-                const jadwal = bacaJadwal(nama) || defaultJadwalSesi[nama];
-                if (jadwal) {
-                    inputMulai.value = jadwal.mulai;
-                    inputSelesai.value = jadwal.selesai;
-                }
-            });
+            if (selectSesi && inputMulai && inputSelesai) {
+                selectSesi.addEventListener('change', function () {
+                    const nama = this.value;
+                    if (!nama) return;
+                    const jadwal = bacaJadwal(nama) || defaultJadwalSesi[nama];
+                    if (jadwal) {
+                        inputMulai.value = jadwal.mulai;
+                        inputSelesai.value = jadwal.selesai;
+                    }
+                });
 
-            function simpanJamTerakhir() {
-                if (selectSesi.value) {
-                    simpanJadwal(selectSesi.value, { mulai: inputMulai.value, selesai: inputSelesai.value });
+                function simpanJamTerakhir() {
+                    if (selectSesi.value) {
+                        simpanJadwal(selectSesi.value, { mulai: inputMulai.value, selesai: inputSelesai.value });
+                    }
                 }
+                inputMulai.addEventListener('change', simpanJamTerakhir);
+                inputSelesai.addEventListener('change', simpanJamTerakhir);
             }
-            inputMulai.addEventListener('change', simpanJamTerakhir);
-            inputSelesai.addEventListener('change', simpanJamTerakhir);
         });
     </script>
 </body>

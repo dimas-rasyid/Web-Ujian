@@ -3,148 +3,138 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Control;
 use App\Models\Sesi;
 use App\Models\Soal;
 use App\Models\OpsiSoal;
 use App\Imports\SoalImport;
 use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\Cache;
 
 class SoalController extends Controller
 {
-    // Menampilkan halaman tambah soal untuk sesi tertentu
-    public function create(Request $request, $id_sesi)
+    public function index(Request $request)
+    {
+        $search = $request->input('search');
+
+        // Ambil data control dengan relasi sesi, mapel, dan kelas (beserta jurusan)
+        $query = Control::with(['sesi', 'mapel', 'kelas.jurusan'])
+            ->when($search, function($q, $search) {
+                $q->whereHas('sesi', function($sub) use ($search) {
+                    $sub->where('judul', 'like', "%{$search}%");
+                })->orWhereHas('mapel', function($sub) use ($search) {
+                    $sub->where('mapel', 'like', "%{$search}%");
+                });
+            });
+
+        $controls = $query->get();
+
+        // Hapus duplikat berdasarkan kombinasi: judul sesi, id_mapel, dan tingkat kelas
+        $listControl = $controls->unique(function ($item) {
+            $judul = optional($item->sesi)->judul;
+            $mapelId = $item->mapel_id;
+            $tingkat = optional($item->kelas)->tingkat; // Mengelompokkan berdasarkan tingkat kelas (X, XI, XII)
+            
+            return $judul . '-' . $mapelId . '-' . $tingkat;
+        });
+
+        return view('guru.managesoal', compact('listControl', 'search'));
+    }
+
+    // Menampilkan halaman tambah/kelola soal berdasarkan id_sesi (atau control)
+    public function detail($id_sesi)
     {
         $sesi = Sesi::findOrFail($id_sesi);
         
-        // Ambil daftar soal di sesi ini
-        $listSoal = Soal::with('opsi')->where('sesi_id', $id_sesi)->orderBy('id_soal', 'asc')->get();
+        // Ambil control terkait sesi ini untuk mendapatkan relasi mapel/kelas jika diperlukan
+        $control = Control::where('sesi_id', $id_sesi)->first();
 
-        // Ambil daftar sesi lain untuk Bank Soal (kecuali sesi saat ini)
-        $listBankSesi = Sesi::where('id_sesi', '!=', $id_sesi)->orderBy('tgl_sesi', 'desc')->get();
+        // Ambil daftar soal yang sudah diinput pada sesi ini melalui tabel control
+        $listSoal = collect();
+        if ($control) {
+            $listSoal = Soal::with('opsiSoal')->where('control_id', $control->id_control)->get();
+        }
 
-        return view('sesi.tambah-soal', compact('sesi', 'listSoal', 'listBankSesi'));
+        // Data bank sesi untuk fitur "Ambil dari Bank Soal"
+        $listBankSesi = Sesi::where('id_sesi', '!=', $id_sesi)->orderBy('created_at', 'desc')->get();
+
+        return view('guru.tambah-soal', compact('sesi', 'control', 'listSoal', 'listBankSesi'));
     }
 
+    // Menyimpan Soal Baru (Pilihan Ganda atau Essay)
     public function store(Request $request, $id_sesi)
     {
         $request->validate([
-            'tipe'          => 'required|in:Pilihan Ganda,Essay',
-            'pertanyaan'    => 'required|string',
-            'kunci_jawaban' => 'nullable|string|in:A,B,C,D,E', 
-            'opsi'          => 'nullable|array',
-            'opsi.*'        => 'nullable|string',
+            'tipe'       => 'required|in:Pilihan Ganda,Essay',
+            'pertanyaan' => 'required|string',
         ]);
 
+        // Cari data control berdasarkan sesi_id
+        $control = Control::where('sesi_id', $id_sesi)->firstOrFail();
+
+        // 1. Simpan ke tabel soal
         $soal = Soal::create([
-            'sesi_id'    => $id_sesi,
+            'control_id' => $control->id_control,
             'tipe'       => $request->tipe,
             'pertanyaan' => $request->pertanyaan,
         ]);
 
+        // 2. Jika Pilihan Ganda, simpan opsi pilihan ke tabel opsi_soal
         if ($request->tipe === 'Pilihan Ganda' && $request->has('opsi')) {
-            foreach ($request->opsi as $kodeOpsi => $teksOpsi) {
-                if (!empty(trim($teksOpsi))) {
-                    $isCorrect = ($kodeOpsi === $request->kunci_jawaban) ? 1 : 0;
+            $kunciJawaban = $request->input('kunci_jawaban'); // Contoh: 'A', 'B', dll.
 
+            foreach ($request->input('opsi') as $huruf => $teksOpsi) {
+                if (!empty($teksOpsi)) {
                     OpsiSoal::create([
-                        'soal_id'   => $soal->id_soal,
-                        'kode_opsi' => $kodeOpsi,
-                        'teks_opsi' => $teksOpsi,
-                        'is_correct'=> $isCorrect,
+                        'soal_id'    => $soal->id_soal,
+                        'kode_opsi'  => $huruf,
+                        'text_opsi'  => $teksOpsi, // Sesuaikan dengan ERD (text_opsi)
+                        'is_correct' => ($kunciJawaban === $huruf) ? 1 : 0,
                     ]);
                 }
             }
         }
 
-        // HAPUS CACHE SOAL SESI INI
-        Cache::forget("sesi_{$id_sesi}_soal");
-
-        return redirect()->route('guru.soal.create', $id_sesi)->with('success', 'Soal berhasil ditambahkan!');
+        return redirect()->route('guru.soal.detail', $id_sesi)->with('success', 'Soal berhasil ditambahkan!');
     }
 
+    // Method untuk menangani import file excel soal
     public function import(Request $request, $id_sesi)
     {
         $request->validate([
-            'file_excel' => 'required|file|mimes:xlsx,xls,csv|max:5120',
+            'file_excel' => 'required|mimes:xlsx,xls,csv|max:5120',
         ]);
 
         try {
             Excel::import(new SoalImport($id_sesi), $request->file('file_excel'));
-            
-            // HAPUS CACHE SOAL SESI INI
-            Cache::forget("sesi_{$id_sesi}_soal");
 
-            return back()->with('success', 'Soal berhasil diimport!');
+            return redirect()->route('guru.soal.detail', $id_sesi)->with('success', 'Soal berhasil di-import dari Excel!');
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal mengimport file. Pastikan format kolom pada file Excel sudah sesuai.']);
+            return back()->withErrors(['error' => 'Gagal mengimport file: ' . $e->getMessage()]);
         }
     }
 
-    // TAMBAH SOAL DARI BANK SOAL
-    public function salinDariBank(Request $request, $id_sesi_tujuan, $id_sesi_sumber)
-    {
-        // Ambil semua soal dari sesi sumber (bank soal)
-        $soalSumber = Soal::with('opsi')->where('sesi_id', $id_sesi_sumber)->get();
-
-        if ($soalSumber->isEmpty()) {
-            return back()->withErrors(['error' => 'Sesi sumber tidak memiliki soal untuk disalin.']);
-        }
-
-        foreach ($soalSumber as $sumber) {
-            // 1. Duplikasi soal ke sesi tujuan
-            $soalBaru = Soal::create([
-                'sesi_id'    => $id_sesi_tujuan,
-                'tipe'       => $sumber->tipe,
-                'pertanyaan' => $sumber->pertanyaan,
-            ]);
-
-            // 2. Jika ada opsi (Pilihan Ganda), duplikasi juga opsi jawabannya
-            if ($sumber->tipe === 'Pilihan Ganda') {
-                foreach ($sumber->opsi as $opsiSumber) {
-                    OpsiSoal::create([
-                        'soal_id'    => $soalBaru->id_soal,
-                        'kode_opsi'  => $opsiSumber->kode_opsi,
-                        'teks_opsi'  => $opsiSumber->teks_opsi,
-                        'is_correct' => $opsiSumber->is_correct,
-                    ]);
-                }
-            }
-        }
-
-        // Hapus cache soal untuk sesi tujuan
-        Cache::forget("sesi_{$id_sesi_tujuan}_soal");
-
-        return redirect()->route('guru.soal.create', $id_sesi_tujuan)
-            ->with('success', 'Soal dari bank sesi berhasil disalin ke sesi ini!');
-    }
-
+    // Menghapus satuan soal
     public function destroy($id_soal)
     {
         $soal = Soal::findOrFail($id_soal);
-        $sesiId = $soal->sesi_id;
-        
-        $soal->opsi()->delete();
+        $control = Control::where('id_control', $soal->control_id)->first();
+        $sesiId = $control ? $control->sesi_id : null;
+
         $soal->delete();
 
-        // HAPUS CACHE SOAL SESI INI
-        Cache::forget("sesi_{$sesiId}_soal");
-
-        return redirect()->route('guru.soal.create', $sesiId)->with('success', 'Soal berhasil dihapus!');
+        return back()->with('success', 'Soal berhasil dihapus!');
     }
 
-    public function destroyAll($id_sesi)
+    public function destroyAll($id)
     {
-        $soals = Soal::where('sesi_id', $id_sesi)->get();
+        // Sesuaikan logika penghapusan berdasarkan struktur (misalnya berdasarkan control_id atau sesi_id)
+        $soals = Soal::where('control_id', $id)->get(); // atau berdasarkan sesi
 
         foreach ($soals as $soal) {
-            $soal->opsi()->delete();
+            $soal->opsiSoal()->delete();
             $soal->delete();
         }
 
-        // HAPUS CACHE SOAL SESI INI
-        Cache::forget("sesi_{$id_sesi}_soal");
-
-        return redirect()->route('guru.soal.create', $id_sesi)->with('success', 'Semua soal pada sesi ini berhasil dihapus!');
+        return back()->with('success', 'Semua soal berhasil dihapus!');
     }
 }

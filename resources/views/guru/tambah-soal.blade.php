@@ -3,17 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kelola Soal - {{ $sesi->judul }}</title>
+    <title>Kelola Soal - {{ $sesi->judul ?? 'Ujian' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
-    <!-- Navbar -->
-    <nav class="bg-indigo-600 text-white px-6 py-4 flex justify-between items-center shadow">
-        <div class="font-bold text-base">Kelola Soal: <span class="font-normal">{{ $sesi->judul }}</span></div>
-        <a href="{{ route('guru.dashboard') }}" class="bg-indigo-700 hover:bg-indigo-800 px-3 py-1.5 rounded text-sm transition">
-            &lt; Kembali ke Dashboard
-        </a>
-    </nav>
+    
+    <!-- Navbar / Header -->
+    <div class="bg-indigo-700 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div>
+                <h1 class="font-bold text-lg">Kelola Soal: {{ $sesi->judul ?? '-' }}</h1>
+                <p class="text-xs text-indigo-200">Token Sesi: {{ $sesi->token ?? '-' }} | Waktu: {{ $sesi->waktu_mulai ?? '-' }}</p>
+            </div>
+            <a href="{{ route('guru.soal.index') }}" class="bg-indigo-800 hover:bg-indigo-900 text-xs px-3 py-2 rounded font-semibold transition">Kembali ke Daftar Sesi</a>
+        </div>
+    </div>
 
     <!-- Konten Utama (Grid 2 Kolom: Kiri Form, Kanan Daftar Soal) -->
     <div class="max-w-7xl mx-auto mt-6 px-4 pb-12">
@@ -35,10 +39,15 @@
         @endif
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            
+
             <!-- KOLOM KIRI: Form Input Soal (Lebar 5 Kolom) -->
             <div class="lg:col-span-5 bg-white p-6 rounded-lg shadow border border-gray-200 h-fit">
-                <h3 class="font-bold text-gray-800 text-base mb-4 border-b pb-2">Tambah Soal Baru</h3>
+                <h3 class="font-bold text-gray-800 text-base mb-1">Tambah Soal Baru</h3>
+    
+                <!-- Teks Informasi Mapel & Kelas yang Sedang Diinput -->
+                <p class="text-xs text-indigo-600 font-semibold mb-4 bg-indigo-50 px-3 py-1.5 rounded border border-indigo-100">
+                    📝 Soal untuk: <span class="font-bold">{{ optional($control->mapel)->mapel ?? 'Mapel' }}</span> — Kelas: <span class="font-bold">{{ optional($control->kelas)->kelas ?? 'Kelas' }}</span>
+                </p>
                 
                 <form action="{{ route('guru.soal.store', $sesi->id_sesi) }}" method="POST">
                     @csrf
@@ -61,7 +70,7 @@
                     <!-- Pertanyaan -->
                     <div class="mb-4">
                         <label class="block text-gray-700 text-xs font-bold mb-2">Pertanyaan / Soal</label>
-                        <textarea name="pertanyaan" rows="4" placeholder="Tuliskan pertanyaan ujian..." class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">{{ old('pertanyaan') }}</textarea>
+                        <textarea name="pertanyaan" rows="4" placeholder="Tuliskan pertanyaan ujian..." required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">{{ old('pertanyaan') }}</textarea>
                     </div>
 
                     <!-- Bagian Opsi Pilihan Ganda (Muncul otomatis jika Pilihan Ganda dipilih) -->
@@ -89,14 +98,15 @@
                     <!-- 1. Card Import Soal dari Excel -->
                     <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-xl flex flex-col justify-between">
                         <div>
-                            <h4 class="font-bold text-indigo-900 text-sm mb-1">Import Soal dari Excel</h4>
-                            <p class="text-[11px] text-slate-600 mb-0">Format kolom: Soal, Opsi A, B, C, D, E, dan Kunci (Kosongkan jika Essay).</p>
+                            <h4 class="font-bold text-indigo-900 text-sm mb-1">Import Soal Excel</h4>
+                            <p class="text-[11px] text-slate-600 mb-2">Format file: Excel / CSV.</p>
                         </div>
-                        <form action="{{ route('guru.soal.import', $sesi->id_sesi) }}" method="POST" enctype="multipart/form-data" class="space-y-3">
+                        
+                        <!-- Pastikan action-nya mengarah ke route import dengan parameter id_sesi -->
+                        <form action="{{ route('guru.soal.import', $sesi->id_sesi) }}" method="POST" enctype="multipart/form-data" class="space-y-2">
                             @csrf
-                            <input type="file" name="file_excel" accept=".xlsx, .xls, .csv" required class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 bg-white border border-slate-300 rounded-lg">
-                            
-                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg text-xs transition shadow-sm">
+                            <input type="file" name="file_excel" accept=".xlsx, .xls, .csv" required class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 bg-white border border-slate-300 rounded">
+                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded text-xs transition shadow-sm">
                                 Upload & Import Excel
                             </button>
                         </form>
@@ -105,14 +115,14 @@
                     <!-- 2. Card Tambah dari Bank Soal (Sesi Sebelumnya) -->
                     <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl flex flex-col justify-between">
                         <div>
-                            <h4 class="font-bold text-emerald-900 text-sm mb-1">Ambil dari Bank Soal</h4>
-                            <p class="text-[11px] text-slate-600 mb-3">Salin atau gunakan kembali soal dari sesi ujian sebelumnya.</p>
+                            <h4 class="font-bold text-emerald-900 text-sm mb-1">Bank Soal</h4>
+                            <p class="text-[11px] text-slate-600 mb-3">Salin soal dari sesi sebelumnya.</p>
                         </div>
                         
                         <div>
                             <!-- Tombol untuk Membuka Modal -->
-                            <button onclick="document.getElementById('modalBankSoal').classList.remove('hidden')" type="button" class="w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs transition shadow-sm">
-                                Pilih dari Bank Soal &rarr;
+                            <button onclick="document.getElementById('modalBankSoal').classList.remove('hidden')" type="button" class="w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded text-xs transition shadow-sm">
+                                Ambil dari Bank &rarr;
                             </button>
                         </div>
 
@@ -123,20 +133,13 @@
                                 <!-- Header Modal -->
                                 <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                                     <h3 class="font-bold text-slate-800 text-sm sm:text-base">Pilih Soal dari Bank Soal (Sesi Sebelumnya)</h3>
-                                    <!-- Tombol Tutup X -->
                                     <button type="button" onclick="document.getElementById('modalBankSoal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 font-bold text-xl px-2">&times;</button>
                                 </div>
 
-                                <!-- Body Modal (Pencarian & Tabel Data Sesi) -->
+                                <!-- Body Modal -->
                                 <div class="p-6 overflow-y-auto flex-1 space-y-4">
-                                    
-                                    <!-- Input Pencarian -->
                                     <div>
-                                        <input type="text" 
-                                            id="inputCariBank" 
-                                            onkeyup="filterTabelBank()" 
-                                            placeholder="Cari berdasarkan judul ujian, kategori, atau sesi..." 
-                                            class="w-full text-xs sm:text-sm px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                                        <input type="text" id="inputCariBank" onkeyup="filterTabelBank()" placeholder="Cari berdasarkan judul sesi..." class="w-full text-xs sm:text-sm px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                                     </div>
 
                                     <div class="overflow-x-auto border border-slate-200 rounded-xl">
@@ -144,10 +147,8 @@
                                             <thead class="bg-slate-100 text-slate-700 uppercase font-semibold text-[11px]">
                                                 <tr>
                                                     <th class="p-3">No</th>
-                                                    <th class="p-3">Judul Ujian</th>
-                                                    <th class="p-3">Kategori</th>
-                                                    <th class="p-3">Sesi</th>
-                                                    <th class="p-3">Tanggal Sesi</th>
+                                                    <th class="p-3">Judul Sesi</th>
+                                                    <th class="p-3">Token</th>
                                                     <th class="p-3 text-center">Aksi</th>
                                                 </tr>
                                             </thead>
@@ -156,25 +157,14 @@
                                                     <tr class="hover:bg-slate-50 row-bank">
                                                         <td class="p-3">{{ $index + 1 }}</td>
                                                         <td class="p-3 font-semibold text-slate-900 data-judul">{{ $bankSesi->judul }}</td>
-                                                        <td class="p-3 data-kategori">
-                                                            <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium text-[11px]">
-                                                                {{ strtoupper($bankSesi->kategori ?? 'Umum') }}
-                                                            </span>
-                                                        </td>
-                                                        <td class="p-3 data-sesi">{{ $bankSesi->sesi }}</td>
-                                                        <td class="p-3">{{ date('d/m/Y', strtotime($bankSesi->tgl_sesi)) }}</td>
+                                                        <td class="p-3">{{ $bankSesi->token }}</td>
                                                         <td class="p-3 text-center">
-                                                            <form action="{{ route('guru.soal.salin', ['id_sesi_tujuan' => $sesi->id_sesi, 'id_sesi_sumber' => $bankSesi->id_sesi]) }}" method="POST">
-                                                                @csrf
-                                                                <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition shadow-sm whitespace-nowrap">
-                                                                    + Tambah Soal
-                                                                </button>
-                                                            </form>
+                                                            <span class="text-xs text-gray-400 italic">Segera Hadir</span>
                                                         </td>
                                                     </tr>
                                                 @empty
                                                     <tr>
-                                                        <td colspan="6" class="p-6 text-center text-slate-400 italic">
+                                                        <td colspan="4" class="p-6 text-center text-slate-400 italic">
                                                             Belum ada data bank sesi ujian yang tersedia.
                                                         </td>
                                                     </tr>
@@ -208,13 +198,13 @@
                         </span>
                     </div>
 
-                    <!-- Tombol Hapus Semua Soal -->
-                    @if($listSoal->count() > 0)
-                        <form action="{{ route('guru.soal.destroyAll', $sesi->id_sesi) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus SELURUH soal pada sesi ini?')">
+                    <!-- Tombol Hapus Semua di Pojok Kanan Atas -->
+                    @if($listSoal->isNotEmpty())
+                        <form action="{{ route('guru.soal.destroyAll', $control->id_control ?? $id_sesi) }}" method="POST" onsubmit="return confirm('PERHATIAN: Apakah Anda yakin ingin menghapus SELURUH soal dan opsi untuk sesi/kontrol ini?')">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-3 py-1 rounded text-xs transition border border-red-200">
-                                Hapus Semua Soal
+                            <button type="submit" class="bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1">
+                                🗑️ Hapus Semua
                             </button>
                         </form>
                     @endif
@@ -239,29 +229,24 @@
                                 </form>
                             </div>
                             
-                            <!-- Menjaga format baris baru / teks kode dengan whitespace-pre-line -->
                             <p class="text-sm font-medium text-gray-800 mb-3 whitespace-pre-line">{{ $soal->pertanyaan }}</p>
 
                             @if($soal->tipe == 'Pilihan Ganda')
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                    @foreach($soal->opsi as $opsi)
+                                    @foreach($soal->opsiSoal as $opsi)
                                         <div class="p-2 rounded border {{ $opsi->is_correct ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-semibold' : 'bg-white text-gray-600' }}">
-                                            <span class="font-bold mr-1">{{ $opsi->kode_opsi }}.</span> {{ $opsi->teks_opsi }}
+                                            <span class="font-bold mr-1">{{ $opsi->kode_opsi }}.</span> {{ $opsi->text_opsi }}
                                             @if($opsi->is_correct)
                                                 <span class="float-right text-[10px] bg-emerald-600 text-white px-1.5 py-0.5 rounded">Kunci</span>
                                             @endif
                                         </div>
                                     @endforeach
                                 </div>
-                            @else
-                                <div class="text-xs text-gray-400 italic bg-white p-2 rounded border">
-                                    Jenis soal uraian (Essay) bebas jawaban siswa.
-                                </div>
                             @endif
                         </div>
                     @empty
                         <div class="text-center py-12 text-gray-400 text-xs italic">
-                            Belum ada soal yang diinput untuk sesi ini. Silakan buat melalui form di sebelah kiri atau import dari Excel.
+                            Belum ada soal yang diinput untuk sesi ini. Silakan buat melalui form di sebelah kiri.
                         </div>
                     @endforelse
                 </div>
@@ -299,28 +284,37 @@
                 labelEssay.className = "flex items-center justify-center px-3 py-2 border rounded-lg text-sm font-semibold cursor-pointer bg-white border-gray-300 text-gray-700 transition";
             }
         }
+
+        // Jalankan pengecekan awal saat halaman dimuat (untuk mendeteksi state old() jika validasi gagal)
+        document.addEventListener("DOMContentLoaded", function() {
+            const checkedTipe = document.querySelector('input[name="tipe"]:checked');
+            if (checkedTipe) {
+                toggleTipeSoal(checkedTipe.value);
+            }
+        });
     </script>
 
     <!-- Script MODAL AMBIL SOAL DARI BANK SOAL -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- Script Sederhana untuk Filter Pencarian Tabel -->
+
+    <!-- Script Sederhana untuk Filter Pencarian Tabel Bank Soal -->
     <script>
-    function filterTabelBank() {
-        let input = document.getElementById('inputCariBank').value.toLowerCase();
-        let rows = document.querySelectorAll('.row-bank');
+        function filterTabelBank() {
+            let input = document.getElementById('inputCariBank').value.toLowerCase();
+            let rows = document.querySelectorAll('.row-bank');
 
-        rows.forEach(row => {
-            let judul = row.querySelector('.data-judul').innerText.toLowerCase();
-            let kategori = row.querySelector('.data-kategori').innerText.toLowerCase();
-            let sesi = row.querySelector('.data-sesi').innerText.toLowerCase();
+            rows.forEach(row => {
+                let judul = row.querySelector('.data-judul') ? row.querySelector('.data-judul').innerText.toLowerCase() : '';
+                let kategori = row.querySelector('.data-kategori') ? row.querySelector('.data-kategori').innerText.toLowerCase() : '';
+                let sesi = row.querySelector('.data-sesi') ? row.querySelector('.data-sesi').innerText.toLowerCase() : '';
 
-            if (judul.includes(input) || kategori.includes(input) || sesi.includes(input)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
-    }
+                if (judul.includes(input) || kategori.includes(input) || sesi.includes(input)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
     </script>
 </body>
 </html>

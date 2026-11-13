@@ -53,7 +53,8 @@
 
                         <div class="mb-4">
                             <label class="block text-gray-700 text-xs font-bold mb-2">Nama Lengkap Siswa</label>
-                            <input type="text" name="nama" required value="{{ old('nama') }}" placeholder="Nama siswa..." class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">
+                            <!-- Ubah name="nama" dan old('nama') menjadi name="name" dan old('name') -->
+                            <input type="text" name="name" required value="{{ old('name') }}" placeholder="Nama siswa..." class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">
                         </div>
 
                         <div class="mb-4">
@@ -129,8 +130,8 @@
                                     <tr class="hover:bg-gray-50">
                                         <td class="p-3 text-gray-500">{{ $listSiswa->firstItem() + $index }}</td>
                                         <td class="p-3 font-mono text-xs font-semibold text-gray-700">{{ $siswa->nisn }}</td>
-                                        <td class="p-3 font-semibold text-gray-800">{{ $siswa->nama }}</td>
-                                        <td class="p-3 text-gray-600">{{ optional($siswa->kelas)->nama_kelas ?? '-' }}</td>
+                                        <td class="p-3 font-semibold text-gray-800">{{ $siswa->name }}</td>
+                                        <td class="p-3 text-gray-600">{{ optional($siswa->kelas)->kelas ?? '-' }}</td>
                                         <td class="p-3 text-xs text-gray-500">{{ optional(optional($siswa->kelas)->jurusan)->nama_jurusan ?? '-' }}</td>
                                         <td class="p-3 text-center">
                                             <form action="{{ route('guru.siswa.destroy', $siswa->id_siswa) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus data siswa ini?')">

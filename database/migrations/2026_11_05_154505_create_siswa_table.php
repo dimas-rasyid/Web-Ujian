@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('opsi_soal', function (Blueprint $table) {
-            $table->id('id_opsi');
-            $table->foreignId('soal_id')->constrained('soal', 'id_soal')->onDelete('cascade');
-            $table->string('kode_opsi');
-            $table->text('teks_opsi');
-            $table->boolean('is_correct')->default(false);
+        Schema::create('siswa', function (Blueprint $table) {
+            $table->id('id_siswa');
+            $table->foreignId('kelas_id')->constrained('kelas', 'id_kelas')->onDelete('cascade');
+            $table->string('nisn');
+            $table->string('name');
+            $table->string('password');
             $table->timestamps();
         });
     }
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('opsi_soal');
+        Schema::dropIfExists('siswa');
     }
 };

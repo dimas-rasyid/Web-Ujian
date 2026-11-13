@@ -16,7 +16,8 @@ class GuruController extends Controller
         $role = session('role') ?? 'admin';
         $guruId = session('id_guru') ?? null;
 
-        $query = Sesi::with(['guru', 'kelas', 'soal']);
+        // Eager load relasi guru, mapel, kelas, dan soal
+        $query = Sesi::with(['guru', 'mapel', 'kelas', 'soal']);
 
         // Jika bukan admin, filter berdasarkan guru_id yang login
         if ($role !== 'admin' && $guruId) {
@@ -26,8 +27,11 @@ class GuruController extends Controller
         if ($search) {
             $query->where(function($q) use ($search) {
                 $q->where('judul', 'like', "%{$search}%")
-                  ->orWhere('kategori', 'like', "%{$search}%")
-                  ->orWhere('sesi', 'like', "%{$search}%");
+                  ->orWhere('sesi', 'like', "%{$search}%")
+                  ->orWhereHas('mapel', function($subQuery) use ($search) {
+                      // Ganti kategori dengan pencarian berdasarkan nama mata pelajaran
+                      $subQuery->where('mapel', 'like', "%{$search}%");
+                  });
             });
         }
 
