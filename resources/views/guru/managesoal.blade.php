@@ -77,7 +77,7 @@
                                     </td>
                                     <td class="p-3 text-right">
                                         <!-- Tombol Masuk ke Halaman Tambah/Kelola Soal berdasarkan Control ID -->
-                                        <a href="{{ route('guru.soal.detail', $control->sesi_id) }}" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded text-xs transition inline-block">
+                                        <a href="{{ route('guru.soal.kelola', $control->id_control) }}" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-xs">
                                             Kelola Soal
                                         </a>
                                     </td>

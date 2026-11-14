@@ -11,17 +11,16 @@ use Illuminate\Support\Collection;
 
 class SoalImport implements ToCollection, WithHeadingRow
 {
-    protected $idSesi;
+    protected $idControl;
 
-    public function __construct($idSesi)
+    public function __construct($idControl)
     {
-        $this->idSesi = $idSesi;
+        $this->idControl = $idControl;
     }
 
     public function collection(Collection $rows)
     {
-        // Ambil control_id berdasarkan sesi_id sesuai ERD
-        $control = Control::where('sesi_id', $this->idSesi)->first();
+        $control = Control::find($this->idControl);
         if (!$control) {
             return;
         }
@@ -29,6 +28,9 @@ class SoalImport implements ToCollection, WithHeadingRow
         foreach ($rows as $row) {
             $pertanyaan = $row['soal'] ?? null;
             if (!$pertanyaan) continue; // Lewati jika baris soal kosong
+
+            // Jika Anda ingin membaca kolom kelas/tingkat dari excel:
+            $kelasExcel = $row['kelas'] ?? null; 
 
             $opsiA = $row['a'] ?? null;
             $opsiB = $row['b'] ?? null;
@@ -41,14 +43,14 @@ class SoalImport implements ToCollection, WithHeadingRow
             $adaOpsi = !empty($opsiA) || !empty($opsiB) || !empty($opsiC) || !empty($opsiD) || !empty($opsiE);
             $tipeSoal = ($adaOpsi && !empty($kunci)) ? 'Pilihan Ganda' : 'Essay';
 
-            // Simpan Soal (menggunakan control_id sesuai ERD)
+            // Simpan Soal menggunakan id_control
             $soal = Soal::create([
                 'control_id' => $control->id_control,
                 'tipe'       => $tipeSoal,
                 'pertanyaan' => $pertanyaan,
             ]);
 
-            // Jika Pilihan Ganda, simpan opsi pilihan ke tabel opsi_soal (text_opsi)
+            // Jika Pilihan Ganda, simpan opsi pilihan ke tabel opsi_soal
             if ($tipeSoal === 'Pilihan Ganda') {
                 $daftarOpsi = [
                     'A' => $opsiA,
@@ -63,7 +65,7 @@ class SoalImport implements ToCollection, WithHeadingRow
                         OpsiSoal::create([
                             'soal_id'    => $soal->id_soal,
                             'kode_opsi'  => $kode,
-                            'text_opsi'  => $teks, // Sesuai kolom DB (text_opsi)
+                            'text_opsi'  => $teks, 
                             'is_correct' => ($kode === $kunci) ? 1 : 0,
                         ]);
                     }

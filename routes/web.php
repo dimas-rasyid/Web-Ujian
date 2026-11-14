@@ -103,11 +103,12 @@ Route::middleware(['auth.guru'])->group(function () {
     // Mnaage SOAL
     Route::get('/guru/soal', [SoalController::class, 'index'])->name('guru.soal.index');
     Route::get('/guru/soal/{id_control}', [SoalController::class, 'detail'])->name('guru.soal.detail');
+    Route::get('/guru/soal/{id_control}', [SoalController::class, 'kelolaSoal'])->name('guru.soal.kelola');
     // Tambah SOAL
     Route::get('/guru/soal', [SoalController::class, 'index'])->name('guru.soal.index');
     Route::get('/guru/soal/{id_sesi}/tambah', [SoalController::class, 'detail'])->name('guru.soal.detail');
-    Route::post('/guru/soal/{id_sesi}/store', [SoalController::class, 'store'])->name('guru.soal.store');
-    Route::post('/guru/soal/{id_sesi}/import', [SoalController::class, 'import'])->name('guru.soal.import');
+    Route::post('/guru/soal/{id_control}/store', [SoalController::class, 'store'])->name('guru.soal.store');
+    Route::post('/guru/soal/{id_control}/import', [SoalController::class, 'import'])->name('guru.soal.import');
     Route::delete('/guru/soal/item/{id_soal}', [SoalController::class, 'destroy'])->name('guru.soal.destroy');
     Route::delete('/guru/soal/destroy-all/{id}', [SoalController::class, 'destroyAll'])->name('guru.soal.destroyAll');
     

@@ -61,15 +61,15 @@ class SoalController extends Controller
     }
 
     // Menyimpan Soal Baru (Pilihan Ganda atau Essay)
-    public function store(Request $request, $id_sesi)
+    public function store(Request $request, $id_control)
     {
         $request->validate([
             'tipe'       => 'required|in:Pilihan Ganda,Essay',
             'pertanyaan' => 'required|string',
         ]);
 
-        // Cari data control berdasarkan sesi_id
-        $control = Control::where('sesi_id', $id_sesi)->firstOrFail();
+        // Langsung cari data control berdasarkan id_control yang dikirim dari URL
+        $control = Control::findOrFail($id_control);
 
         // 1. Simpan ke tabel soal
         $soal = Soal::create([
@@ -87,27 +87,47 @@ class SoalController extends Controller
                     OpsiSoal::create([
                         'soal_id'    => $soal->id_soal,
                         'kode_opsi'  => $huruf,
-                        'text_opsi'  => $teksOpsi, // Sesuaikan dengan ERD (text_opsi)
+                        'text_opsi'  => $teksOpsi, 
                         'is_correct' => ($kunciJawaban === $huruf) ? 1 : 0,
                     ]);
                 }
             }
         }
 
-        return redirect()->route('guru.soal.detail', $id_sesi)->with('success', 'Soal berhasil ditambahkan!');
+        // Redirect kembali ke halaman detail/kelola soal berdasarkan id_control tersebut
+        return redirect()->route('guru.soal.kelola', $id_control)->with('success', 'Soal berhasil ditambahkan!');
+    }
+
+    public function kelolaSoal($id_control)
+    {
+        // Ambil data control berdasarkan ID beserta relasi sesi, mapel, dan kelas
+        $control = Control::with(['sesi', 'mapel', 'kelas'])->findOrFail($id_control);
+
+        // Ambil daftar soal yang terikat pada control_id ini
+        $listSoal = Soal::where('control_id', $id_control)->with(['opsiSoal'])->get();
+
+        // Ambil daftar sesi/bank soal (misalnya semua sesi ujian yang ada atau difilter sesuai kebutuhan)
+        $listBankSesi = \App\Models\Sesi::all(); 
+
+        // Kirim $listBankSesi ke dalam view bersama $control dan $listSoal
+        return view('guru.tambah-soal', compact('control', 'listSoal', 'listBankSesi'));
     }
 
     // Method untuk menangani import file excel soal
-    public function import(Request $request, $id_sesi)
+    public function import(Request $request, $id_control)
     {
         $request->validate([
             'file_excel' => 'required|mimes:xlsx,xls,csv|max:5120',
         ]);
 
-        try {
-            Excel::import(new SoalImport($id_sesi), $request->file('file_excel'));
+        // Pastikan control benar-benar ada di database
+        $control = Control::findOrFail($id_control);
 
-            return redirect()->route('guru.soal.detail', $id_sesi)->with('success', 'Soal berhasil di-import dari Excel!');
+        try {
+            // Kirim $id_control ke SoalImport
+            Excel::import(new SoalImport($control->id_control), $request->file('file_excel'));
+            
+            return back()->with('success', 'Soal berhasil diimport!');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal mengimport file: ' . $e->getMessage()]);
         }

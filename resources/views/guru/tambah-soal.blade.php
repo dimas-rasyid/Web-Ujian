@@ -12,8 +12,7 @@
     <div class="bg-indigo-700 text-white shadow-md">
         <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <div>
-                <h1 class="font-bold text-lg">Kelola Soal: {{ $sesi->judul ?? '-' }}</h1>
-                <p class="text-xs text-indigo-200">Token Sesi: {{ $sesi->token ?? '-' }} | Waktu: {{ $sesi->waktu_mulai ?? '-' }}</p>
+                <h1 class="font-bold text-lg">Kelola Soal:</h1>
             </div>
             <a href="{{ route('guru.soal.index') }}" class="bg-indigo-800 hover:bg-indigo-900 text-xs px-3 py-2 rounded font-semibold transition">Kembali ke Daftar Sesi</a>
         </div>
@@ -42,14 +41,17 @@
 
             <!-- KOLOM KIRI: Form Input Soal (Lebar 5 Kolom) -->
             <div class="lg:col-span-5 bg-white p-6 rounded-lg shadow border border-gray-200 h-fit">
-                <h3 class="font-bold text-gray-800 text-base mb-1">Tambah Soal Baru</h3>
+                <h3 class="font-bold text-gray-800 text-base mb-1">Tambah Soal</h3>
     
-                <!-- Teks Informasi Mapel & Kelas yang Sedang Diinput -->
-                <p class="text-xs text-indigo-600 font-semibold mb-4 bg-indigo-50 px-3 py-1.5 rounded border border-indigo-100">
-                    📝 Soal untuk: <span class="font-bold">{{ optional($control->mapel)->mapel ?? 'Mapel' }}</span> — Kelas: <span class="font-bold">{{ optional($control->kelas)->kelas ?? 'Kelas' }}</span>
-                </p>
+                <!-- Ubah bagian banner/label informasi soal -->
+                <div class="mb-4">
+                    <!-- Hanti atau sesuaikan agar hanya menampilkan Mapel dan Tingkat -->
+                    <span class="font-semibold text-gray-800">Untuk:</span> 
+                    <span class="text-indigo-600 font-bold">{{ $control->mapel->mapel ?? '-' }}</span> — 
+                    <span class="text-dark-600 font-bold">Tingkat: {{ $control->kelas->tingkat ?? '-' }}</span>
+                </div>
                 
-                <form action="{{ route('guru.soal.store', $sesi->id_sesi) }}" method="POST">
+                <form action="{{ route('guru.soal.store', $control->id_control) }}" method="POST">
                     @csrf
                     
                     <!-- Pilihan Tipe Soal Sederhana (Tab / Tombol) -->
@@ -70,7 +72,7 @@
                     <!-- Pertanyaan -->
                     <div class="mb-4">
                         <label class="block text-gray-700 text-xs font-bold mb-2">Pertanyaan / Soal</label>
-                        <textarea name="pertanyaan" rows="4" placeholder="Tuliskan pertanyaan ujian..." required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">{{ old('pertanyaan') }}</textarea>
+                        <textarea name="pertanyaan" rows="2" placeholder="Tuliskan pertanyaan ujian..." required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">{{ old('pertanyaan') }}</textarea>
                     </div>
 
                     <!-- Bagian Opsi Pilihan Ganda (Muncul otomatis jika Pilihan Ganda dipilih) -->
@@ -103,11 +105,11 @@
                         </div>
                         
                         <!-- Pastikan action-nya mengarah ke route import dengan parameter id_sesi -->
-                        <form action="{{ route('guru.soal.import', $sesi->id_sesi) }}" method="POST" enctype="multipart/form-data" class="space-y-2">
+                        <form action="{{ route('guru.soal.import', $control->id_control) }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             <input type="file" name="file_excel" accept=".xlsx, .xls, .csv" required class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 bg-white border border-slate-300 rounded">
                             <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded text-xs transition shadow-sm">
-                                Upload & Import Excel
+                                Import Excel
                             </button>
                         </form>
                     </div>
@@ -210,7 +212,7 @@
                     @endif
                 </div>
 
-                <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                <div class="space-y-4 max-h-[750px] overflow-y-auto pr-2">
                     @forelse($listSoal as $index => $soal)
                         <div class="border rounded-lg p-4 bg-gray-50 hover:bg-white transition shadow-sm">
                             <div class="flex justify-between items-start mb-2">
